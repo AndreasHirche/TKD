@@ -19,10 +19,47 @@
   .cb.wide{min-width:clamp(92px,25vw,122px);border-radius:99px}
   .cb.act{background:rgba(160,0,20,0.2);border-color:rgba(200,40,40,0.5);color:#fca5a5}
   .cb.on{background:rgba(255,220,0,0.3)!important;border-color:#ffdd00!important;color:#ffdd00!important}
-  @media(hover:none){
+  /* portrait: canvas top, controls below */
+  @media(pointer:coarse) and (orientation:portrait){
     #keys{display:none}
     #controls{display:flex}
-    body{justify-content:flex-start}
+    body{justify-content:flex-start;overflow-y:auto}
+  }
+  /* landscape: canvas fills screen, controls float as transparent overlay */
+  @media(pointer:coarse) and (orientation:landscape){
+    #keys{display:none}
+    body{overflow:hidden;justify-content:center;align-items:center}
+    canvas{height:100dvh;width:auto;max-width:100vw;max-height:100dvh;border:none}
+    #controls{
+      display:flex;
+      position:fixed;top:0;left:50%;
+      transform:translateX(-50%);
+      width:min(100vw,calc(100dvh * 1.7391));
+      height:100dvh;
+      max-width:none;padding:10px;
+      align-items:flex-end;
+      background:transparent;
+      pointer-events:none;
+      z-index:10
+    }
+    #controls .cside{pointer-events:all}
+    .cb{
+      min-width:clamp(40px,9vw,54px);height:clamp(40px,9vw,54px);
+      background:rgba(255,255,255,0.07)!important;
+      border-color:rgba(255,255,255,0.18)!important;
+      color:rgba(255,255,255,0.55)!important
+    }
+    .cb.wide{min-width:clamp(84px,19vw,114px)}
+    .cb.act{
+      background:rgba(160,0,20,0.1)!important;
+      border-color:rgba(200,40,40,0.22)!important;
+      color:rgba(252,165,165,0.55)!important
+    }
+    .cb.on{
+      background:rgba(255,220,0,0.25)!important;
+      border-color:rgba(255,220,0,0.65)!important;
+      color:rgba(255,220,0,0.9)!important
+    }
   }
 </style>
 </head>
@@ -90,13 +127,6 @@ function sfx(n) {
 const K = {};
 addEventListener('keydown', e => { K[e.code]=true;  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) e.preventDefault(); });
 addEventListener('keyup',   e => { K[e.code]=false; });
-
-// ── Show controls on touch devices ──────────────────────────────────────────
-if ('ontouchstart' in window || navigator.maxTouchPoints > 0 || window.matchMedia('(hover:none)').matches) {
-  document.getElementById('controls').style.display = 'flex';
-  document.getElementById('keys').style.display = 'none';
-  document.body.style.justifyContent = 'flex-start';
-}
 
 // ── Mobile touch controls ───────────────────────────────────────────────────
 document.querySelectorAll('.cb').forEach(btn => {
