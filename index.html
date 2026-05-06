@@ -2,13 +2,28 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>TKD — Taekwondo Sparring</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
-  body{background:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:'Courier New',monospace;user-select:none}
-  canvas{display:block;border:2px solid #333}
-  #keys{margin-top:10px;font-size:.72rem;color:#555;text-align:center;line-height:2}
+  html,body{width:100%;height:100%}
+  body{background:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100%;overflow:hidden;font-family:'Courier New',monospace;user-select:none;-webkit-user-select:none}
+  canvas{display:block;width:100%;height:auto;max-width:800px;border:2px solid #333;touch-action:none}
+  #keys{margin-top:8px;font-size:.72rem;color:#555;text-align:center;line-height:2}
   #keys b{color:#aaa;background:#222;padding:1px 6px;border-radius:3px;border:1px solid #444}
+  /* ── Mobile controls ── */
+  #controls{display:none;width:100%;max-width:800px;padding:8px 10px;justify-content:space-between;gap:6px;touch-action:none}
+  .cside{display:flex;flex-direction:column;gap:6px}
+  .crow{display:flex;gap:6px}
+  .cb{min-width:clamp(44px,12vw,58px);height:clamp(44px,12vw,58px);background:rgba(255,255,255,0.1);border:2px solid rgba(255,255,255,0.22);border-radius:50%;color:#ccc;font-size:clamp(.6rem,2.5vw,.78rem);font-weight:700;font-family:'Courier New',monospace;display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:none;user-select:none}
+  .cb.wide{min-width:clamp(92px,25vw,122px);border-radius:99px}
+  .cb.act{background:rgba(160,0,20,0.2);border-color:rgba(200,40,40,0.5);color:#fca5a5}
+  .cb.on{background:rgba(255,220,0,0.3)!important;border-color:#ffdd00!important;color:#ffdd00!important}
+  @media(hover:none){
+    #keys{display:none}
+    #controls{display:flex}
+    body{justify-content:flex-start}
+  }
 </style>
 </head>
 <body>
@@ -50,6 +65,26 @@ function sfx(n) {
 const K = {};
 addEventListener('keydown', e => { K[e.code]=true;  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) e.preventDefault(); });
 addEventListener('keyup',   e => { K[e.code]=false; });
+
+// ── Mobile touch controls ───────────────────────────────────────────────────
+document.querySelectorAll('.cb').forEach(btn => {
+  const key = btn.dataset.key;
+  btn.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    K[key] = true;
+    btn.classList.add('on');
+    btn.setPointerCapture(e.pointerId);
+    if (AC.state === 'suspended') AC.resume();
+  });
+  btn.addEventListener('pointerup',     () => { K[key]=false; btn.classList.remove('on'); });
+  btn.addEventListener('pointercancel', () => { K[key]=false; btn.classList.remove('on'); });
+});
+cv.addEventListener('pointerdown', () => {
+  if (AC.state === 'suspended') AC.resume();
+  if (game.state===STATES.MENU || game.state===STATES.OVER) {
+    K['Enter']=true; setTimeout(()=>K['Enter']=false, 100);
+  }
+});
 
 // ── Constants ──────────────────────────────────────────────────────────────
 const STATES = {
@@ -870,7 +905,7 @@ const game = {
       if (this.wins.p>=2||this.wins.c>=2||this.round>=3) {
         this.state=STATES.OVER;
         this.annText = this.wins.p>this.wins.c?'PLAYER WINS!':(this.wins.c>this.wins.p?'CPU WINS!':'DRAW!');
-        this.annSub='Press ENTER to play again';
+        this.annSub='TAP or ENTER to play again';
         sfx('end');
       } else {
         this.round++;
@@ -901,7 +936,7 @@ function drawMenu() {
 
   if (Math.floor(Date.now()/600)%2===0) {
     cx.fillStyle='#ffdd00'; cx.font='bold 17px "Courier New"';
-    cx.fillText('PRESS  ENTER  TO  START', W/2, 318);
+    cx.fillText('TAP  OR  PRESS  ENTER', W/2, 318);
   }
   cx.fillStyle='#444'; cx.font='11px "Courier New"';
   cx.fillText('3 Rounds — Score points by landing kicks and punches', W/2, 355);
@@ -945,7 +980,7 @@ function loop(ts) {
   else if (game.state===STATES.OVER) {
     drawBG(game.round); drawF(game.p); drawF(game.c);
     drawHUD(game.p,game.c,game.round,0);
-    announce(game.annText,'Press ENTER to play again');
+    announce(game.annText,'TAP or ENTER to play again');
     if (K['Enter']) { K['Enter']=false; game.round=1; game.wins={p:0,c:0}; game.startRound(); }
   }
 
@@ -953,5 +988,30 @@ function loop(ts) {
 }
 requestAnimationFrame(ts=>{lastTs=ts; requestAnimationFrame(loop);});
 </script>
+<div id="controls">
+  <div class="cside">
+    <div class="crow">
+      <div class="cb" data-key="ArrowLeft">←</div>
+      <div class="cb" data-key="ArrowUp">↑</div>
+      <div class="cb" data-key="ArrowRight">→</div>
+    </div>
+    <div class="crow">
+      <div class="cb wide" data-key="ArrowDown">▼ CROUCH</div>
+    </div>
+  </div>
+  <div class="cside">
+    <div class="crow">
+      <div class="cb act" data-key="KeyA">PUNCH</div>
+      <div class="cb act" data-key="KeyS">KICK</div>
+    </div>
+    <div class="crow">
+      <div class="cb act" data-key="KeyD">ROUND</div>
+      <div class="cb act" data-key="KeyF">HIGH</div>
+    </div>
+    <div class="crow">
+      <div class="cb act wide" data-key="Space">BLOCK</div>
+    </div>
+  </div>
+</div>
 </body>
 </html>
