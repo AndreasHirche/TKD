@@ -32,6 +32,31 @@
   <b>← →</b> Move &nbsp; <b>↑</b> Jump &nbsp; <b>↓</b> Crouch &nbsp; <b>A</b> Punch &nbsp;
   <b>S</b> Front Kick &nbsp; <b>D</b> Roundhouse &nbsp; <b>F</b> High Kick &nbsp; <b>SPACE</b> Block
 </div>
+<div id="controls">
+  <div class="cside">
+    <div class="crow">
+      <div class="cb" data-key="ArrowLeft">←</div>
+      <div class="cb" data-key="ArrowUp">↑</div>
+      <div class="cb" data-key="ArrowRight">→</div>
+    </div>
+    <div class="crow">
+      <div class="cb wide" data-key="ArrowDown">▼ CROUCH</div>
+    </div>
+  </div>
+  <div class="cside">
+    <div class="crow">
+      <div class="cb act" data-key="KeyA">PUNCH</div>
+      <div class="cb act" data-key="KeyS">KICK</div>
+    </div>
+    <div class="crow">
+      <div class="cb act" data-key="KeyD">ROUND</div>
+      <div class="cb act" data-key="KeyF">HIGH</div>
+    </div>
+    <div class="crow">
+      <div class="cb act wide" data-key="Space">BLOCK</div>
+    </div>
+  </div>
+</div>
 <script>
 const cv = document.getElementById('c');
 const cx = cv.getContext('2d');
@@ -995,30 +1020,5 @@ function loop(ts) {
 }
 requestAnimationFrame(ts=>{lastTs=ts; requestAnimationFrame(loop);});
 </script>
-<div id="controls">
-  <div class="cside">
-    <div class="crow">
-      <div class="cb" data-key="ArrowLeft">←</div>
-      <div class="cb" data-key="ArrowUp">↑</div>
-      <div class="cb" data-key="ArrowRight">→</div>
-    </div>
-    <div class="crow">
-      <div class="cb wide" data-key="ArrowDown">▼ CROUCH</div>
-    </div>
-  </div>
-  <div class="cside">
-    <div class="crow">
-      <div class="cb act" data-key="KeyA">PUNCH</div>
-      <div class="cb act" data-key="KeyS">KICK</div>
-    </div>
-    <div class="crow">
-      <div class="cb act" data-key="KeyD">ROUND</div>
-      <div class="cb act" data-key="KeyF">HIGH</div>
-    </div>
-    <div class="crow">
-      <div class="cb act wide" data-key="Space">BLOCK</div>
-    </div>
-  </div>
-</div>
 </body>
 </html>
