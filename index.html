@@ -66,6 +66,13 @@ const K = {};
 addEventListener('keydown', e => { K[e.code]=true;  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) e.preventDefault(); });
 addEventListener('keyup',   e => { K[e.code]=false; });
 
+// ── Show controls on touch devices ──────────────────────────────────────────
+if ('ontouchstart' in window || navigator.maxTouchPoints > 0 || window.matchMedia('(hover:none)').matches) {
+  document.getElementById('controls').style.display = 'flex';
+  document.getElementById('keys').style.display = 'none';
+  document.body.style.justifyContent = 'flex-start';
+}
+
 // ── Mobile touch controls ───────────────────────────────────────────────────
 document.querySelectorAll('.cb').forEach(btn => {
   const key = btn.dataset.key;
