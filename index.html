@@ -158,31 +158,20 @@ function drawBG(round) {
   [drawBG_r1, drawBG_r2, drawBG_r3][(round||1)-1]();
 }
 
-// Round 1 – 경복궁 Gyeongbokgung Palace (낮 · Daytime)
+// Round 1 – Halle background image
+var _bgImg_r1 = null;
 function drawBG_r1() {
   cx.save();
-  const sky = cx.createLinearGradient(0,0,0,GY);
-  sky.addColorStop(0,'#2e86ab'); sky.addColorStop(1,'#aaddf0');
-  cx.fillStyle=sky; cx.fillRect(0,0,W,GY);
-  // Forested mountains (Bugaksan)
-  [[220,105,195],[390,72,215],[565,92,185]].forEach(([mx,my,mw])=>{
-    cx.fillStyle='#4a6e40';
-    cx.beginPath(); cx.moveTo(mx-mw,GY); cx.lineTo(mx,my); cx.lineTo(mx+mw,GY); cx.fill();
-    cx.fillStyle='#3a5a30';
-    cx.beginPath(); cx.moveTo(mx,my); cx.lineTo(mx-22,my+32); cx.lineTo(mx+22,my+32); cx.fill();
-  });
-  gwanghwamun(400, GY);
-  koreanPine(72,GY); koreanPine(118,GY); koreanPine(162,GY);
-  koreanPine(640,GY); koreanPine(686,GY); koreanPine(730,GY);
-  // Flagpole + 태극기
-  cx.strokeStyle='#888'; cx.lineWidth=3; cx.lineCap='round';
-  cx.beginPath(); cx.moveTo(55,GY); cx.lineTo(55,GY-172); cx.stroke();
-  koreanFlag(57, GY-172, 72, 48);
-  const grd=cx.createLinearGradient(0,GY,0,H);
-  grd.addColorStop(0,'#c8a870'); grd.addColorStop(1,'#9a7a38');
-  cx.fillStyle=grd; cx.fillRect(0,GY,W,H-GY);
-  cx.strokeStyle='#907030'; cx.lineWidth=2;
-  cx.beginPath(); cx.moveTo(0,GY); cx.lineTo(W,GY); cx.stroke();
+  if (!_bgImg_r1) {
+    _bgImg_r1 = new Image();
+    _bgImg_r1.src = 'halle.jpg';
+  }
+  if (_bgImg_r1.complete && _bgImg_r1.naturalWidth) {
+    cx.drawImage(_bgImg_r1, 0, 0, W, H);
+  } else {
+    cx.fillStyle = '#2e86ab'; cx.fillRect(0, 0, W, H);
+    _bgImg_r1.onload = null;
+  }
   cx.restore();
 }
 
@@ -983,7 +972,7 @@ function drawMenu() {
   cx.textAlign='center';
 
   cx.fillStyle='#ffdd00'; cx.font='bold 64px "Courier New"';
-  cx.fillText('TKD', W/2, 105);
+  cx.fillText('TVG', W/2, 105);
   cx.fillStyle='#fff'; cx.font='bold 18px "Courier New"';
   cx.fillText('TAEKWONDO  SPARRING', W/2, 140);
 
