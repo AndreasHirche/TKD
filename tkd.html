@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>TKD — Taekwondo Sparring</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:100%;height:100%}
+  body{background:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100%;overflow:hidden;font-family:'Courier New',monospace;user-select:none;-webkit-user-select:none}
+  canvas{display:block;width:100%;height:auto;max-width:800px;border:2px solid #333;touch-action:none}
+  #keys{margin-top:8px;font-size:.72rem;color:#555;text-align:center;line-height:2}
+  #keys b{color:#aaa;background:#222;padding:1px 6px;border-radius:3px;border:1px solid #444}
+  /* ── Mobile controls ── */
+  #controls{display:none;width:100%;max-width:800px;padding:8px 10px;justify-content:space-between;gap:6px;touch-action:none}
+  .cside{display:flex;flex-direction:column;gap:6px}
+  .crow{display:flex;gap:6px}
+  .cb{min-width:clamp(44px,12vw,58px);height:clamp(44px,12vw,58px);background:rgba(255,255,255,0.1);border:2px solid rgba(255,255,255,0.22);border-radius:50%;color:#ccc;font-size:clamp(.6rem,2.5vw,.78rem);font-weight:700;font-family:'Courier New',monospace;display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:none;user-select:none}
+  .cb.wide{min-width:clamp(92px,25vw,122px);border-radius:99px}
+  .cb.act{background:rgba(160,0,20,0.2);border-color:rgba(200,40,40,0.5);color:#fca5a5}
+  .cb.on{background:rgba(255,220,0,0.3)!important;border-color:#ffdd00!important;color:#ffdd00!important}
+  /* portrait: canvas top, controls below */
+  @media(pointer:coarse) and (orientation:portrait){
+    #keys{display:none}
+    #controls{display:flex}
+    body{justify-content:flex-start;overflow-y:auto}
+  }
+  /* landscape: canvas fills screen, controls float as transparent overlay */
+  @media(pointer:coarse) and (orientation:landscape){
+    #keys{display:none}
+    body{overflow:hidden;justify-content:center;align-items:center}
+    canvas{height:100dvh;width:auto;max-width:100vw;max-height:100dvh;border:none}
+    #controls{
+      display:flex;
+      position:fixed;top:0;left:50%;
+      transform:translateX(-50%);
+      width:min(100vw,calc(100dvh * 1.7391));
+      height:100dvh;
+      max-width:none;padding:10px;
+      align-items:flex-end;
+      background:transparent;
+      pointer-events:none;
+      z-index:10
+    }
+    #controls .cside{pointer-events:all}
+    .cb{
+      min-width:clamp(40px,9vw,54px);height:clamp(40px,9vw,54px);
+      background:rgba(255,255,255,0.07)!important;
+      border-color:rgba(255,255,255,0.18)!important;
+      color:rgba(255,255,255,0.55)!important
+    }
+    .cb.wide{min-width:clamp(84px,19vw,114px)}
+    .cb.act{
+      background:rgba(160,0,20,0.1)!important;
+      border-color:rgba(200,40,40,0.22)!important;
+      color:rgba(252,165,165,0.55)!important
+    }
+    .cb.on{
+      background:rgba(255,220,0,0.25)!important;
+      border-color:rgba(255,220,0,0.65)!important;
+      color:rgba(255,220,0,0.9)!important
+    }
+  }
+</style>
+</head>
+<body>
+<canvas id="c" width="800" height="460"></canvas>
+<div id="keys">
+  <b>← →</b> Move &nbsp; <b>↑</b> Jump &nbsp; <b>↓</b> Crouch &nbsp; <b>A</b> Punch &nbsp;
+  <b>S</b> Front Kick &nbsp; <b>D</b> Roundhouse &nbsp; <b>F</b> High Kick &nbsp; <b>SPACE</b> Block
+</div>
+<div id="controls">
+  <div class="cside">
+    <div class="crow">
+      <div class="cb" data-key="ArrowLeft">←</div>
+      <div class="cb" data-key="ArrowUp">↑</div>
+      <div class="cb" data-key="ArrowRight">→</div>
+    </div>
+    <div class="crow">
+      <div class="cb wide" data-key="ArrowDown">▼ CROUCH</div>
+    </div>
+  </div>
+  <div class="cside">
+    <div class="crow">
+      <div class="cb act" data-key="KeyA">PUNCH</div>
+      <div class="cb act" data-key="KeyS">KICK</div>
+    </div>
+    <div class="crow">
+      <div class="cb act" data-key="KeyD">ROUND</div>
+      <div class="cb act" data-key="KeyF">HIGH</div>
+    </div>
+    <div class="crow">
+      <div class="cb act wide" data-key="Space">BLOCK</div>
+    </div>
+  </div>
+</div>
+<script>
+const cv = document.getElementById('c');
+const cx = cv.getContext('2d');
+const W = 800, H = 460, GY = 380;
+const GRAV = 0.55, SPD = 3.2;
+
+// ── Audio ──────────────────────────────────────────────────────────────────
+const AC = new (window.AudioContext || window.webkitAudioContext)();
+function tone(freq, dur, type='square', vol=0.18, decay=true) {
+  try {
+    const o = AC.createOscillator(), g = AC.createGain();
+    o.type = type; o.frequency.value = freq;
+    g.gain.setValueAtTime(vol, AC.currentTime);
+    if (decay) g.gain.exponentialRampToValueAtTime(0.001, AC.currentTime + dur);
+    o.connect(g); g.connect(AC.destination);
+    o.start(); o.stop(AC.currentTime + dur);
+  } catch(e) {}
+}
+function sfx(n) {
+  if (n==='punch')   { tone(220,0.07,'square',0.22); }
+  if (n==='kick')    { tone(160,0.1,'sawtooth',0.28); tone(100,0.08,'square',0.12); }
+  if (n==='hit')     { tone(110,0.18,'sawtooth',0.35); }
+  if (n==='block')   { tone(320,0.06,'square',0.18); }
+  if (n==='ko')      { tone(70,0.5,'sawtooth',0.4); }
+  if (n==='score')   { tone(440,0.08,'square',0.18); setTimeout(()=>tone(660,0.15,'square',0.2),80); }
+  if (n==='bell')    { [330,440,550,660].forEach((f,i)=>setTimeout(()=>tone(f,0.2,'square',0.2),i*100)); }
+  if (n==='end')     { [660,550,440,330,220].forEach((f,i)=>setTimeout(()=>tone(f,0.22,'sawtooth',0.28),i*160)); }
+}
+
+// ── Input ──────────────────────────────────────────────────────────────────
+const K = {};
+addEventListener('keydown', e => { K[e.code]=true;  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) e.preventDefault(); });
+addEventListener('keyup',   e => { K[e.code]=false; });
+
+// ── Mobile touch controls ───────────────────────────────────────────────────
+document.querySelectorAll('.cb').forEach(btn => {
+  const key = btn.dataset.key;
+  btn.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    K[key] = true;
+    btn.classList.add('on');
+    btn.setPointerCapture(e.pointerId);
+    if (AC.state === 'suspended') AC.resume();
+  });
+  btn.addEventListener('pointerup',     () => { K[key]=false; btn.classList.remove('on'); });
+  btn.addEventListener('pointercancel', () => { K[key]=false; btn.classList.remove('on'); });
+});
+cv.addEventListener('pointerdown', () => {
+  if (AC.state === 'suspended') AC.resume();
+  if (game.state===STATES.MENU || game.state===STATES.OVER) {
+    K['Enter']=true; setTimeout(()=>K['Enter']=false, 100);
+  }
+});
+
+// ── Constants ──────────────────────────────────────────────────────────────
+const STATES = {
+  MENU:'menu', FIGHT:'fight', PAUSE:'pause', ROUNDEND:'roundend', OVER:'over'
+};
+
+// ── Background ─────────────────────────────────────────────────────────────
+function drawBG(round) {
+  [drawBG_r1, drawBG_r2, drawBG_r3][(round||1)-1]();
+}
+
+// Round 1 – Halle background image
+var _bgImg_r1 = null;
+function drawBG_r1() {
+  cx.save();
+  if (!_bgImg_r1) {
+    _bgImg_r1 = new Image();
+    _bgImg_r1.src = 'halle.jpg';
+  }
+  if (_bgImg_r1.complete && _bgImg_r1.naturalWidth) {
+    cx.drawImage(_bgImg_r1, 0, 0, W, H);
+  } else {
+    cx.fillStyle = '#2e86ab'; cx.fillRect(0, 0, W, H);
+    _bgImg_r1.onload = null;
+  }
+  cx.restore();
+}
+
+// Round 2 – 한강 Han River at Sunset (석양)
+function drawBG_r2() {
+  cx.save();
+  const sky=cx.createLinearGradient(0,0,0,GY);
+  sky.addColorStop(0,'#1a0a3f'); sky.addColorStop(0.32,'#8b2252');
+  sky.addColorStop(0.68,'#e05828'); sky.addColorStop(1,'#f0a050');
+  cx.fillStyle=sky; cx.fillRect(0,0,W,GY);
+  // Sun
+  cx.fillStyle='#ffd040';
+  cx.beginPath(); cx.arc(590,130,32,0,Math.PI*2); cx.fill();
+  cx.fillStyle='rgba(255,200,50,0.22)';
+  cx.beginPath(); cx.arc(590,130,56,0,Math.PI*2); cx.fill();
+  // Seoul skyline
+  [[60,195,36],[100,168,32],[136,210,40],[180,152,28],[212,200,34],[248,136,22],[274,185,30],
+   [660,162,36],[698,182,30],[732,145,26],[762,196,32]].forEach(([bx,bh,bw])=>{
+    cx.fillStyle='#1a1a3a'; cx.fillRect(bx,GY-bh,bw,bh);
+    cx.fillStyle='#e8c840';
+    for(let wy=GY-bh+12;wy<GY-10;wy+=16)
+      for(let wx=bx+5;wx<bx+bw-5;wx+=10)
+        if((wy+wx)%26<16) cx.fillRect(wx,wy,5,7);
+  });
+  nseoulTower(535, GY);
+  // Han River strip + shimmer
+  cx.fillStyle='rgba(220,130,70,0.42)';
+  cx.fillRect(0,GY-62,W,30);
+  cx.strokeStyle='rgba(255,170,70,0.28)'; cx.lineWidth=2;
+  for(let rx=15;rx<W;rx+=58) {
+    cx.beginPath(); cx.moveTo(rx,GY-55); cx.lineTo(rx+28,GY-48); cx.stroke();
+  }
+  // Hangang Bridge
+  cx.strokeStyle='#12121e'; cx.lineWidth=5;
+  cx.beginPath(); cx.moveTo(0,GY-46); cx.lineTo(W,GY-46); cx.stroke();
+  cx.lineWidth=3;
+  for(let px=90;px<W;px+=105) {
+    cx.beginPath(); cx.moveTo(px,GY-46); cx.lineTo(px,GY); cx.stroke();
+  }
+  const grd=cx.createLinearGradient(0,GY,0,H);
+  grd.addColorStop(0,'#285a28'); grd.addColorStop(1,'#162816');
+  cx.fillStyle=grd; cx.fillRect(0,GY,W,H-GY);
+  cx.strokeStyle='#1a4010'; cx.lineWidth=2;
+  cx.beginPath(); cx.moveTo(0,GY); cx.lineTo(W,GY); cx.stroke();
+  cx.restore();
+}
+
+// Round 3 – 설악산 Seoraksan by Night (밤)
+function drawBG_r3() {
+  cx.save();
+  const sky=cx.createLinearGradient(0,0,0,GY);
+  sky.addColorStop(0,'#020210'); sky.addColorStop(1,'#0c0c28');
+  cx.fillStyle=sky; cx.fillRect(0,0,W,GY);
+  // Stars
+  cx.fillStyle='#fff';
+  [[45,25],[115,16],[192,44],[312,18],[408,36],[498,22],[596,42],[692,28],[752,50],
+   [155,64],[275,52],[444,70],[626,58],[88,84],[375,78],[510,34],[648,72]].forEach(([sx,sy])=>{
+    cx.fillRect(sx,sy,2,2);
+  });
+  // Moon
+  cx.fillStyle='#f0e8c0';
+  cx.beginPath(); cx.arc(680,85,38,0,Math.PI*2); cx.fill();
+  cx.fillStyle='#ddd8a0';
+  cx.beginPath(); cx.arc(666,76,8,0,Math.PI*2); cx.fill();
+  cx.beginPath(); cx.arc(690,95,5,0,Math.PI*2); cx.fill();
+  cx.fillStyle='rgba(240,230,180,0.1)';
+  cx.beginPath(); cx.arc(680,85,62,0,Math.PI*2); cx.fill();
+  // Far jagged mountains (Seoraksan)
+  cx.fillStyle='#18183a';
+  cx.beginPath();
+  [[0,GY],[70,GY-108],[140,GY-76],[215,GY-148],[290,GY-92],[368,GY-168],
+   [442,GY-102],[514,GY-142],[592,GY-82],[664,GY-122],[732,GY-88],[800,GY]]
+    .forEach(([px,py],i)=>i===0?cx.moveTo(px,py):cx.lineTo(px,py));
+  cx.closePath(); cx.fill();
+  // Snow caps
+  cx.fillStyle='rgba(235,242,255,0.85)';
+  [[215,GY-148,13],[368,GY-168,16],[514,GY-142,12]].forEach(([px,py,pw])=>{
+    cx.beginPath(); cx.moveTo(px,py); cx.lineTo(px-pw,py+26); cx.lineTo(px+pw,py+26); cx.fill();
+  });
+  // Mid mountains (closer)
+  cx.fillStyle='#26264a';
+  cx.beginPath();
+  [[0,GY],[58,GY-72],[96,GY-54],[154,GY-92],[214,GY-62],[288,GY-108],[356,GY-70],
+   [432,GY-100],[512,GY-66],[578,GY-90],[648,GY-56],[712,GY-82],[800,GY]]
+    .forEach(([px,py],i)=>i===0?cx.moveTo(px,py):cx.lineTo(px,py));
+  cx.closePath(); cx.fill();
+  stoneLantern(105, GY); stoneLantern(695, GY);
+  pagodaNight(230, GY);
+  // Flagpole + 태극기 (night – slightly dimmed)
+  cx.strokeStyle='#666'; cx.lineWidth=3; cx.lineCap='round';
+  cx.beginPath(); cx.moveTo(590,GY); cx.lineTo(590,GY-155); cx.stroke();
+  cx.globalAlpha=0.72;
+  koreanFlag(592, GY-155, 60, 40);
+  cx.globalAlpha=1;
+  const grd=cx.createLinearGradient(0,GY,0,H);
+  grd.addColorStop(0,'#1a1a20'); grd.addColorStop(1,'#0a0a10');
+  cx.fillStyle=grd; cx.fillRect(0,GY,W,H-GY);
+  cx.strokeStyle='#24242a'; cx.lineWidth=2;
+  cx.beginPath(); cx.moveTo(0,GY); cx.lineTo(W,GY); cx.stroke();
+  cx.strokeStyle='rgba(55,55,65,0.5)'; cx.lineWidth=1;
+  for(let gx=0;gx<W;gx+=55) { cx.beginPath(); cx.moveTo(gx,GY); cx.lineTo(gx,H); cx.stroke(); }
+  cx.restore();
+}
+
+// ── Scene element helpers ──────────────────────────────────────────────────
+function gwanghwamun(x, y) {
+  // Stone gate base with three arches
+  cx.fillStyle='#788080'; cx.fillRect(x-90,y-55,180,55);
+  cx.fillStyle='#120a08';
+  cx.beginPath(); cx.arc(x,y-16,18,Math.PI,0,true);
+  cx.lineTo(x+18,y); cx.lineTo(x-18,y); cx.closePath(); cx.fill();
+  [-52,52].forEach(ox=>{
+    cx.beginPath(); cx.arc(x+ox,y-13,13,Math.PI,0,true);
+    cx.lineTo(x+ox+13,y); cx.lineTo(x+ox-13,y); cx.closePath(); cx.fill();
+  });
+  // Bracket cornice
+  cx.fillStyle='#7a1008'; cx.fillRect(x-94,y-73,188,20);
+  cx.fillStyle='#5a0a06';
+  for(let bx=x-86;bx<=x+76;bx+=28) { cx.beginPath(); cx.arc(bx,y-73,7,Math.PI,0); cx.fill(); }
+  // Lower hall + dancheong stripe
+  cx.fillStyle='#8a1808'; cx.fillRect(x-82,y-113,164,42);
+  cx.fillStyle='#1a6618'; cx.fillRect(x-84,y-116,168,6);
+  // Lower curved roof
+  cx.fillStyle='#1a3c10';
+  cx.beginPath(); cx.moveTo(x-106,y-110); cx.quadraticCurveTo(x,y-134,x+106,y-110);
+  cx.lineTo(x+102,y-113); cx.lineTo(x-102,y-113); cx.closePath(); cx.fill();
+  cx.fillStyle='#265018';
+  cx.beginPath(); cx.moveTo(x-108,y-110); cx.lineTo(x,y-132); cx.lineTo(x+108,y-110);
+  cx.lineTo(x+102,y-112); cx.lineTo(x,y-128); cx.lineTo(x-102,y-112); cx.closePath(); cx.fill();
+  // Upper hall
+  cx.fillStyle='#8a1808'; cx.fillRect(x-58,y-153,116,42);
+  cx.fillStyle='#1a6618'; cx.fillRect(x-60,y-155,120,6);
+  // Upper curved roof
+  cx.fillStyle='#1a3c10';
+  cx.beginPath(); cx.moveTo(x-78,y-150); cx.quadraticCurveTo(x,y-172,x+78,y-150);
+  cx.lineTo(x+74,y-153); cx.lineTo(x-74,y-153); cx.closePath(); cx.fill();
+  cx.fillStyle='#265018';
+  cx.beginPath(); cx.moveTo(x-80,y-150); cx.lineTo(x,y-170); cx.lineTo(x+80,y-150);
+  cx.lineTo(x+74,y-152); cx.lineTo(x,y-167); cx.lineTo(x-74,y-152); cx.closePath(); cx.fill();
+  // Chibi ridge finials (치미)
+  cx.fillStyle='#c0a000';
+  cx.fillRect(x-81,y-168,7,14); cx.fillRect(x+74,y-168,7,14);
+  cx.fillRect(x-56,y-178,6,12); cx.fillRect(x+50,y-178,6,12);
+}
+
+function koreanPine(x, y) {
+  // Reddish curved trunk (소나무)
+  cx.strokeStyle='#9b5520'; cx.lineWidth=7; cx.lineCap='round';
+  cx.beginPath(); cx.moveTo(x,y); cx.quadraticCurveTo(x+8,y-42,x+5,y-82); cx.stroke();
+  // Sparse needle clusters on branches
+  [[-24,y-54,19,9],[20,y-64,21,9],[-8,y-82,18,8]].forEach(([bx,by,rx,ry])=>{
+    cx.fillStyle='#1a4a10';
+    cx.beginPath(); cx.ellipse(x+bx,by,rx,ry,-0.25,0,Math.PI*2); cx.fill();
+    cx.fillStyle='#2a6820';
+    cx.beginPath(); cx.ellipse(x+bx-4,by-5,rx*0.66,ry*0.7,0.2,0,Math.PI*2); cx.fill();
+  });
+}
+
+function nseoulTower(x, y) {
+  // Namsan hill
+  cx.fillStyle='#1c2c1c';
+  cx.beginPath(); cx.arc(x,y,52,Math.PI,0); cx.fill();
+  // Base building
+  cx.fillStyle='#252530'; cx.fillRect(x-12,y-86,24,48);
+  // Tower shaft
+  cx.fillStyle='#1a1a22'; cx.fillRect(x-4,y-146,8,62);
+  // Observation deck
+  cx.fillStyle='#28283a';
+  cx.beginPath(); cx.ellipse(x,y-146,15,5,0,0,Math.PI*2); cx.fill();
+  cx.fillRect(x-14,y-160,28,16);
+  cx.beginPath(); cx.ellipse(x,y-160,15,5,0,0,Math.PI*2); cx.fill();
+  // Antenna
+  cx.strokeStyle='#1a1a22'; cx.lineWidth=3;
+  cx.beginPath(); cx.moveTo(x,y-160); cx.lineTo(x,y-194); cx.stroke();
+  // Lights
+  cx.fillStyle='#ffdd40';
+  cx.beginPath(); cx.arc(x,y-116,2,0,Math.PI*2); cx.fill();
+  cx.beginPath(); cx.arc(x,y-98,2,0,Math.PI*2); cx.fill();
+}
+
+function stoneLantern(x, y) {
+  // 석등 Korean stone lantern
+  cx.fillStyle='#888890'; cx.fillRect(x-14,y-8,28,8);
+  cx.fillStyle='#9a9aa0'; cx.fillRect(x-6,y-22,12,14);
+  cx.fillStyle='#b0b0b8'; cx.fillRect(x-11,y-40,22,20);
+  cx.fillStyle='rgba(255,195,75,0.55)'; cx.fillRect(x-7,y-38,14,16);
+  cx.fillStyle='#888890';
+  cx.beginPath(); cx.moveTo(x-17,y-40); cx.lineTo(x,y-57); cx.lineTo(x+17,y-40); cx.fill();
+  cx.beginPath(); cx.arc(x,y-59,4,0,Math.PI*2); cx.fill();
+}
+
+function pagodaNight(x, y) {
+  const tiers=[[70,28],[55,24],[40,20],[28,16]]; let yy=y;
+  tiers.forEach(([w,h])=>{
+    cx.fillStyle='#1a1a30'; cx.fillRect(x-w/2,yy-h,w,h);
+    cx.fillStyle='#0e0e1e';
+    cx.beginPath(); cx.moveTo(x-w/2-8,yy-h); cx.lineTo(x,yy-h-16); cx.lineTo(x+w/2+8,yy-h); cx.fill();
+    yy-=h+4;
+  });
+  cx.fillStyle='#0e0e1e'; cx.fillRect(x-40,y-8,80,8);
+}
+
+function koreanFlag(x, y, w, h) {
+  cx.save();
+  // White background
+  cx.fillStyle='#fff'; cx.fillRect(x,y,w,h);
+
+  const cfx=x+w*0.5, cfy=y+h*0.5;
+  const r=h*0.28, r2=r*0.5;
+
+  // 태극 (Taeguk): red full circle → blue bottom half → blue small circle upper → red small circle lower
+  cx.fillStyle='#cd2e3a';
+  cx.beginPath(); cx.arc(cfx,cfy,r,0,Math.PI*2); cx.fill();
+
+  cx.fillStyle='#003478';
+  cx.beginPath(); cx.arc(cfx,cfy,r,0,Math.PI,false); cx.closePath(); cx.fill();
+  cx.beginPath(); cx.arc(cfx,cfy-r2,r2,0,Math.PI*2); cx.fill();
+
+  cx.fillStyle='#cd2e3a';
+  cx.beginPath(); cx.arc(cfx,cfy+r2,r2,0,Math.PI*2); cx.fill();
+
+  // Trigrams (괘) – scaled bars
+  const bw=w*0.20, bh=Math.max(1.5,h*0.055), bg=h*0.042, brk=bw*0.2;
+  function triBar(tx,ty,solid){
+    cx.fillStyle='#000';
+    if(solid){
+      cx.fillRect(tx-bw/2,ty-bh/2,bw,bh);
+    } else {
+      cx.fillRect(tx-bw/2,ty-bh/2,bw/2-brk/2,bh);
+      cx.fillRect(tx+brk/2,ty-bh/2,bw/2-brk/2,bh);
+    }
+  }
+  function trigram(tx,ty,top,mid,bot){
+    triBar(tx,ty-(bh+bg),top);
+    triBar(tx,ty,mid);
+    triBar(tx,ty+(bh+bg),bot);
+  }
+  const ox=w*0.27, oy=h*0.21;
+  trigram(cfx-ox, cfy-oy, true,  true,  true ); // 건 ☰ upper-left
+  trigram(cfx+ox, cfy-oy, true,  false, true ); // 이 ☲ upper-right
+  trigram(cfx-ox, cfy+oy, false, true,  false); // 감 ☵ lower-left
+  trigram(cfx+ox, cfy+oy, false, false, false); // 곤 ☷ lower-right
+
+  cx.strokeStyle='#bbb'; cx.lineWidth=0.5;
+  cx.strokeRect(x,y,w,h);
+  cx.restore();
+}
+
+// ── Fighter ────────────────────────────────────────────────────────────────
+class Fighter {
+  constructor(x, dir, isPlayer, name, belt) {
+    this.x=x; this.y=GY; this.vy=0; this.vx=0;
+    this.dir=dir; this.isPlayer=isPlayer; this.name=name; this.belt=belt;
+    this.hp=100; this.score=0;
+    this.state='idle'; this.sTimer=0; this.fIdx=0; this.fTick=0;
+    this.grounded=true; this.blocking=false; this.crouching=false;
+    this.atkActive=false; this.didHit=false;
+    this.flash=0; this.iFrames=0;
+    this.aiCD=0; this.aiState='approach';
+  }
+  get body() { return {x:this.x-18,y:this.y-88,w:36,h:88}; }
+  get atkBox() {
+    if (!this.atkActive) return null;
+    const d=this.dir;
+    let ox,oy,w=38,h=18;
+    switch(this.state){
+      case 'punch':      ox=d*32; oy=-52; break;
+      case 'kick_f':     ox=d*38; oy=-38; break;
+      case 'kick_r':     ox=d*40; oy=-50; w=42; break;
+      case 'kick_h':     ox=d*30; oy=-72; break;
+      case 'kick_j':     ox=d*42; oy=-44; w=44; break;
+      default: return null;
+    }
+    return {x:this.x+ox-w/2, y:this.y+oy-h/2, w, h};
+  }
+  atk(type) {
+    const busy=['punch','kick_f','kick_r','kick_h','kick_j','hit','down'];
+    if (busy.includes(this.state)) return;
+    this.state=type; this.sTimer=0; this.fIdx=0; this.fTick=0;
+    this.atkActive=false; this.didHit=false;
+    sfx(type==='punch'?'punch':'kick');
+  }
+  hurt(dmg, type) {
+    if (this.iFrames>0||this.state==='down') return 0;
+    if (this.blocking) { sfx('block'); this.hp=Math.max(0,this.hp-Math.floor(dmg*0.15)); return 0; }
+    this.hp=Math.max(0,this.hp-dmg);
+    this.flash=10; this.iFrames=25;
+    sfx('hit');
+    let pts = type==='punch'?1:type==='kick_f'?2:type==='kick_r'?2:type==='kick_h'?3:3;
+    if (dmg>=18||this.hp<=0) {
+      this.state='down'; this.sTimer=0; sfx('ko'); pts++;
+    } else { this.state='hit'; this.sTimer=0; }
+    return pts;
+  }
+  update(opp) {
+    if (this.flash>0) this.flash--;
+    if (this.iFrames>0) this.iFrames--;
+    this.fTick++;
+    if (this.fTick>=5) { this.fTick=0; this.fIdx++; }
+    this.sTimer++;
+
+    // State logic
+    switch(this.state) {
+      case 'idle': this.atkActive=false; this.blocking=false; break;
+      case 'walk_f': case 'walk_b': this.atkActive=false; this.blocking=false; break;
+      case 'punch':
+        if(this.fIdx===1) this.atkActive=true;
+        if(this.fIdx>=3) this.atkActive=false;
+        if(this.fIdx>=5) { this.state='idle'; }
+        break;
+      case 'kick_f':
+        if(this.fIdx===1) this.atkActive=true;
+        if(this.fIdx>=3) this.atkActive=false;
+        if(this.fIdx>=6) this.state='idle';
+        break;
+      case 'kick_r':
+        if(this.fIdx===1) this.atkActive=true;
+        if(this.fIdx>=3) this.atkActive=false;
+        if(this.fIdx>=6) this.state='idle';
+        break;
+      case 'kick_h':
+        if(this.fIdx===1) this.atkActive=true;
+        if(this.fIdx>=3) this.atkActive=false;
+        if(this.fIdx>=7) this.state='idle';
+        break;
+      case 'kick_j':
+        if(this.fIdx>=1) this.atkActive=true;
+        break;
+      case 'hit':
+        if(this.sTimer>=18) { this.state='idle'; this.atkActive=false; }
+        break;
+      case 'down':
+        if(this.sTimer>=110) { this.state='idle'; this.iFrames=50; }
+        break;
+      case 'block':
+        this.atkActive=false;
+        break;
+      case 'crouch':
+        this.atkActive=false;
+        break;
+      case 'jump':
+        break;
+    }
+    if (!this.atkActive) this.didHit=false;
+
+    if (this.isPlayer) this.playerInput(opp);
+    else this.aiLogic(opp);
+
+    // Physics
+    if (!this.grounded) { this.vy+=GRAV; }
+    this.y+=this.vy; this.x+=this.vx; this.vx=0;
+    if (this.y>=GY) {
+      this.y=GY; this.vy=0; this.grounded=true;
+      if (this.state==='jump'||this.state==='kick_j') this.state='idle';
+    }
+    this.x = Math.max(55, Math.min(W-55, this.x));
+    // Auto-face
+    const atk=['punch','kick_f','kick_r','kick_h','kick_j','hit','down'];
+    if (!atk.includes(this.state)) this.dir = opp.x>this.x ? 1 : -1;
+  }
+  playerInput(opp) {
+    const atk=['punch','kick_f','kick_r','kick_h','kick_j'];
+    if (['hit','down'].includes(this.state)) return;
+    const inAtk=atk.includes(this.state);
+
+    // Block
+    if (K['Space']&&!inAtk) { this.state='block'; this.blocking=true; return; }
+    if (this.state==='block'&&!K['Space']) { this.state='idle'; this.blocking=false; }
+
+    if (inAtk) return;
+
+    // Attacks
+    if (K['KeyA']) { this.atk('punch');  K['KeyA']=false; return; }
+    if (K['KeyS']) { this.atk('kick_f'); K['KeyS']=false; return; }
+    if (K['KeyD']) { this.atk('kick_r'); K['KeyD']=false; return; }
+    if (K['KeyF']) { this.atk('kick_h'); K['KeyF']=false; return; }
+
+    // Jump kick in air
+    if (!this.grounded && (K['KeyS']||K['KeyD']||K['KeyF'])) { this.atk('kick_j'); return; }
+
+    // Jump
+    if (K['ArrowUp']&&this.grounded) {
+      this.vy=-13; this.grounded=false; this.state='jump';
+    }
+    // Crouch
+    if (K['ArrowDown']&&this.grounded) {
+      this.crouching=true; this.state='crouch';
+    } else {
+      if (this.crouching) this.state='idle';
+      this.crouching=false;
+    }
+    // Move
+    if (K['ArrowRight']) { this.vx=SPD; if(this.grounded&&!this.crouching) this.state=this.dir===1?'walk_f':'walk_b'; }
+    else if (K['ArrowLeft']) { this.vx=-SPD; if(this.grounded&&!this.crouching) this.state=this.dir===1?'walk_b':'walk_f'; }
+    else if (this.state==='walk_f'||this.state==='walk_b') this.state='idle';
+  }
+  aiLogic(opp) {
+    this.aiCD--;
+    const busy=['punch','kick_f','kick_r','kick_h','kick_j','hit','down','block'];
+    if (busy.includes(this.state)&&this.state!=='block') return;
+    if (this.aiCD>0) return;
+    const dist=Math.abs(this.x-opp.x);
+    const range=110;
+
+    if (this.state==='block') {
+      if (Math.random()>0.35) { this.state='idle'; this.blocking=false; }
+      this.aiCD=20; return;
+    }
+    if (dist>range+20) {
+      this.vx=this.dir*2.8; this.state='walk_f';
+    } else if (dist<60) {
+      this.vx=-this.dir*2.5; this.state='walk_b';
+    } else {
+      const r=Math.random();
+      if (r<0.08) { this.state='block'; this.blocking=true; this.aiCD=30; return; }
+      else if (r<0.22) this.atk('kick_h');
+      else if (r<0.42) this.atk('kick_r');
+      else if (r<0.60) this.atk('kick_f');
+      else if (r<0.75) this.atk('punch');
+      else if (r<0.85&&this.grounded) { this.vy=-13; this.grounded=false; this.state='jump'; }
+      else this.state='idle';
+    }
+    this.aiCD = 18+Math.floor(Math.random()*24);
+  }
+}
+
+// ── Draw Fighters ──────────────────────────────────────────────────────────
+function roundRect(x,y,w,h,r,fill,stroke) {
+  cx.beginPath();
+  cx.moveTo(x+r,y); cx.lineTo(x+w-r,y);
+  cx.quadraticCurveTo(x+w,y,x+w,y+r);
+  cx.lineTo(x+w,y+h-r); cx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  cx.lineTo(x+r,y+h); cx.quadraticCurveTo(x,y+h,x,y+h-r);
+  cx.lineTo(x,y+r); cx.quadraticCurveTo(x,y,x+r,y);
+  cx.closePath();
+  if(fill){cx.fillStyle=fill;cx.fill();}
+  if(stroke){cx.strokeStyle=stroke;cx.lineWidth=1.2;cx.stroke();}
+}
+
+function drawF(f) {
+  const alpha = (f.flash>0 && f.flash%3<2) ? 0.45 : 1.0;
+  cx.save();
+  cx.globalAlpha = alpha;
+  cx.translate(f.x, f.y);
+  cx.scale(f.dir, 1);
+
+  // shadow: stays on ground, shrinks with height
+  const height = GY - f.y;
+  const srad = Math.max(0.35, 1 - height/180);
+  cx.globalAlpha *= 0.3;
+  cx.fillStyle='#000';
+  cx.beginPath(); cx.ellipse(0, height-1, 20*srad, 5*srad, 0, 0, Math.PI*2); cx.fill();
+  cx.globalAlpha = alpha;
+
+  const sk='#e8b870', wh='#f4f4ec', sh='#d0d0c8', bl=f.belt, ol='#2a2a2a';
+
+  switch(f.state){
+    case 'idle': case 'walk_f': case 'walk_b': {
+      const b = Math.sin(f.fIdx*0.8)*2.5;
+      pose_idle(sk,wh,sh,bl,ol,b); break;
+    }
+    case 'crouch':   pose_crouch(sk,wh,sh,bl,ol); break;
+    case 'jump':     pose_jump(sk,wh,sh,bl,ol); break;
+    case 'punch':    pose_punch(sk,wh,sh,bl,ol,Math.min(f.fIdx/2,1)); break;
+    case 'kick_f':   pose_kick_front(sk,wh,sh,bl,ol,Math.min(f.fIdx*0.6,1)); break;
+    case 'kick_r':   pose_kick_round(sk,wh,sh,bl,ol,Math.min(f.fIdx*0.65,1)); break;
+    case 'kick_h':   pose_kick_high(sk,wh,sh,bl,ol,Math.min(f.fIdx*0.55,1)); break;
+    case 'kick_j':   pose_kick_jump(sk,wh,sh,bl,ol); break;
+    case 'block':    pose_block(sk,wh,sh,bl,ol); break;
+    case 'hit':      pose_hit(sk,wh,sh,bl,ol); break;
+    case 'down':     pose_down(sk,wh,sh,bl,ol); break;
+    default:         pose_idle(sk,wh,sh,bl,ol,0);
+  }
+  cx.restore();
+  cx.globalAlpha=1;
+}
+
+// body builder helpers
+function leg(x1,y1,x2,y2,x3,y3,col,ol,w=11){
+  cx.lineCap='round'; cx.lineJoin='round';
+  cx.strokeStyle=col; cx.lineWidth=w;
+  cx.beginPath(); cx.moveTo(x1,y1); cx.lineTo(x2,y2); cx.lineTo(x3,y3); cx.stroke();
+  cx.strokeStyle=ol; cx.lineWidth=1; cx.stroke();
+}
+function arm(x1,y1,x2,y2,x3,y3,col,sk,ol){
+  cx.strokeStyle=col; cx.lineWidth=9; cx.lineCap='round';
+  cx.beginPath(); cx.moveTo(x1,y1); cx.lineTo(x2,y2); cx.lineTo(x3,y3); cx.stroke();
+  cx.strokeStyle=ol; cx.lineWidth=1; cx.stroke();
+  // fist
+  cx.fillStyle=sk; cx.strokeStyle=ol; cx.lineWidth=1;
+  cx.beginPath(); cx.arc(x3,y3,6,0,Math.PI*2); cx.fill(); cx.stroke();
+}
+function torso(bx,by,wh,sh,bl,ol){
+  roundRect(bx-13,by-75,26,40,3,wh,ol);
+  // V collar
+  cx.strokeStyle=sh; cx.lineWidth=1.5;
+  cx.beginPath(); cx.moveTo(bx-5,by-75); cx.lineTo(bx,by-62); cx.lineTo(bx+5,by-75); cx.stroke();
+  // belt
+  cx.fillStyle=bl; cx.fillRect(bx-14,by-38,28,7);
+}
+function head(x,y,sk,ol){
+  cx.fillStyle=sk; cx.strokeStyle=ol; cx.lineWidth=1.5;
+  cx.beginPath(); cx.ellipse(x,y,9,11,0,0,Math.PI*2); cx.fill(); cx.stroke();
+  cx.fillStyle='#333'; // hair
+  cx.beginPath(); cx.ellipse(x,y-9,9,5,0,Math.PI,Math.PI*2); cx.fill();
+  cx.fillStyle='#111'; // eyes
+  cx.fillRect(x-4,y-3,3,3); cx.fillRect(x+1,y-3,3,3);
+}
+// foot shape: pill oriented along +x from ankle (ax,ay); ang rotates it (0=forward flat)
+function drawFoot(ax, ay, ang, sk, ol) {
+  cx.save();
+  cx.translate(ax, ay);
+  cx.rotate(ang);
+  cx.fillStyle=sk; cx.strokeStyle=ol; cx.lineWidth=1;
+  cx.beginPath();
+  cx.moveTo(-3, -5);
+  cx.lineTo(11, -5);
+  cx.arc(11, -2.5, 2.5, -Math.PI/2, Math.PI/2);
+  cx.lineTo(-3, 0);
+  cx.arc(-3, -2.5, 2.5, Math.PI/2, -Math.PI/2, true);
+  cx.closePath();
+  cx.fill(); cx.stroke();
+  cx.restore();
+}
+
+function pose_idle(sk,wh,sh,bl,ol,bob=0) {
+  leg(-6,-45-bob, -9,-20, -12,-6,  wh,ol);
+  leg( 6,-45-bob,  8,-20,  12,-6,  wh,ol);
+  drawFoot(-12, 0, 0.1, sk, ol);
+  drawFoot( 12, 0, 0.1, sk, ol);
+  torso(0,0-bob,wh,sh,bl,ol);
+  arm(-13,-70-bob, -20,-52, -24,-40, wh,sk,ol);
+  arm( 13,-70-bob,  18,-52,  22,-42, wh,sk,ol);
+  head(0,-82-bob,sk,ol);
+}
+function pose_crouch(sk,wh,sh,bl,ol) {
+  leg(-6,-25, -18,-8, -16,-6,  wh,ol,12);
+  leg( 6,-25,  18,-8,  16,-6,  wh,ol,12);
+  drawFoot(-16, 0, 0.1, sk, ol);
+  drawFoot( 16, 0, 0.1, sk, ol);
+  roundRect(-14,-55,28,32,3,wh,ol); // torso
+  cx.fillStyle=bl; cx.fillRect(-14,-26,28,7);
+  arm(-13,-52, -22,-38, -26,-28, wh,sk,ol);
+  arm( 13,-52,  22,-38,  26,-28, wh,sk,ol);
+  head(0,-64,sk,ol);
+}
+function pose_jump(sk,wh,sh,bl,ol) {
+  leg(-6,-48, -14,-30, -10,-24, wh,ol);
+  leg( 6,-48,  14,-30,  10,-24, wh,ol);
+  drawFoot(-10, -18, 0.7, sk, ol);
+  drawFoot( 10, -18, 0.7, sk, ol);
+  torso(0,0,wh,sh,bl,ol);
+  arm(-13,-70, -18,-55, -14,-42, wh,sk,ol);
+  arm( 13,-70,  18,-55,  14,-42, wh,sk,ol);
+  head(0,-82,sk,ol);
+}
+function pose_punch(sk,wh,sh,bl,ol,t) {
+  leg(-6,-45, -8,-20, -12,-6, wh,ol);
+  leg( 6,-45,  6,-20,  10,-6, wh,ol);
+  drawFoot(-12, 0, 0.1, sk, ol);
+  drawFoot( 10, 0, 0.1, sk, ol);
+  torso(0,0,wh,sh,bl,ol);
+  arm(-13,-70, -18,-54, -20,-42, wh,sk,ol); // guard
+  // punching arm extending forward
+  const px=13+t*38, py=-70;
+  cx.strokeStyle=wh; cx.lineWidth=10; cx.lineCap='round';
+  cx.beginPath(); cx.moveTo(13,py); cx.lineTo(px,py); cx.stroke();
+  cx.strokeStyle=ol; cx.lineWidth=1; cx.stroke();
+  cx.fillStyle=sk; cx.strokeStyle=ol; cx.lineWidth=1;
+  cx.beginPath(); cx.arc(px+7,py,7,0,Math.PI*2); cx.fill(); cx.stroke();
+  head(0,-82,sk,ol);
+}
+function pose_kick_front(sk,wh,sh,bl,ol,t) {
+  // standing leg
+  leg(-6,-45, -8,-22, -10,-6, wh,ol);
+  drawFoot(-10, 0, 0.1, sk, ol);
+  torso(0,0,wh,sh,bl,ol);
+  arm(-13,-70, -16,-54, -18,-42, wh,sk,ol);
+  arm( 13,-70,  16,-54,  18,-44, wh,sk,ol);
+  head(0,-82,sk,ol);
+  // kicking leg: knee stays high, foot always below knee
+  const kneex = 18 + t*14, kneey = -65 + t*10;
+  const anklex = 12 + t*46, ankley = kneey + 16 + t*3;
+  leg(6,-45, kneex,kneey, anklex,ankley, wh,ol,12);
+  drawFoot(anklex, ankley, 1.0 - t*0.8, sk, ol);
+}
+function pose_kick_round(sk,wh,sh,bl,ol,t) {
+  // standing leg
+  leg(-6,-45, -9,-20, -12,-6, wh,ol);
+  drawFoot(-12, 0, 0.1, sk, ol);
+  torso(0,0,wh,sh,bl,ol);
+  arm(-13,-70, -20,-55, -24,-45, wh,sk,ol);
+  arm( 13,-70,  18,-55,  20,-46, wh,sk,ol);
+  head(0,-82,sk,ol);
+  // chamber -> swing: knee always higher than foot
+  const kneex = 14 + t*12, kneey = -58 + t*8;
+  const anklex = kneex + 6 + t*36, ankley = kneey + 12 - t*4;
+  leg(6,-46, kneex,kneey, anklex,ankley, wh,ol,12);
+  drawFoot(anklex, ankley, 0.6 - t*0.5, sk, ol);
+}
+function pose_kick_high(sk,wh,sh,bl,ol,t) {
+  // support leg
+  leg(-8,-44, -10,-20, -12,-6, wh,ol);
+  drawFoot(-12, 0, 0.1, sk, ol);
+  torso(-3*t,0,wh,sh,bl,ol);
+  arm(-13,-70-3*t, -8,-56-3*t, -4,-44-3*t, wh,sk,ol); // arms raise for balance
+  arm( 13,-70-3*t, 22,-60-3*t, 28,-52-3*t, wh,sk,ol);
+  head(-3*t,-82-2*t,sk,ol);
+  // HIGH kick: foot intentionally goes above knee (exception); straight leg
+  const ky = -44 - t*42;
+  const kx = t*24;
+  leg(6,-44, 11+t*12,-44-t*21, 16+kx,ky, wh,ol,12);
+  drawFoot(16+kx, ky, -1.2, sk, ol);
+}
+function pose_kick_jump(sk,wh,sh,bl,ol) {
+  // flying side kick - body more horizontal
+  leg(-10,-40, -14,-20, -12,-8, wh,ol);
+  drawFoot(-12, -8, 0.7, sk, ol);
+  roundRect(-13,-72,26,36,3,wh,ol);
+  cx.fillStyle=bl; cx.fillRect(-13,-39,26,6);
+  arm(-13,-68, -16,-52, -12,-40, wh,sk,ol);
+  arm( 13,-68,  16,-52,  14,-40, wh,sk,ol);
+  head(0,-80,sk,ol);
+  // kick leg extended fully forward
+  leg(6,-44, 26,-34, 48,-30, wh,ol,12);
+  drawFoot(48, -30, 0.3, sk, ol);
+}
+function pose_block(sk,wh,sh,bl,ol) {
+  leg(-6,-45, -9,-20, -12,-6, wh,ol);
+  leg( 6,-45,  9,-20,  12,-6, wh,ol);
+  drawFoot(-12, 0, 0.1, sk, ol);
+  drawFoot( 12, 0, 0.1, sk, ol);
+  torso(0,0,wh,sh,bl,ol);
+  // High guard: both arms raised, crossed
+  cx.strokeStyle=wh; cx.lineWidth=10; cx.lineCap='round';
+  cx.beginPath(); cx.moveTo(-13,-70); cx.lineTo(-8,-82); cx.lineTo(10,-78); cx.stroke();
+  cx.beginPath(); cx.moveTo( 13,-70); cx.lineTo(8,-82); cx.lineTo(-10,-78); cx.stroke();
+  cx.strokeStyle=ol; cx.lineWidth=1; cx.stroke();
+  head(0,-94,sk,ol);
+}
+function pose_hit(sk,wh,sh,bl,ol) {
+  leg(-6,-42, -10,-18, -14,-6, wh,ol);
+  leg( 6,-42,   8,-18,  12,-6, wh,ol);
+  drawFoot(-14, 0, 0.1, sk, ol);
+  drawFoot( 12, 0, 0.1, sk, ol);
+  roundRect(-13,-72,26,34,3,wh,ol);
+  cx.fillStyle=bl; cx.fillRect(-13,-40,26,6);
+  arm(-13,-68, -20,-52, -18,-40, wh,sk,ol);
+  arm( 13,-68,  20,-52,  18,-40, wh,sk,ol);
+  head(14,-78,sk,ol); // head snaps back-sideways
+}
+function pose_down(sk,wh,sh,bl,ol) {
+  cx.save(); cx.rotate(-Math.PI*0.5);
+  cx.translate(20, 14);
+  leg(-6,-30, -20,-20, -28,-6, wh,ol);
+  leg( 6,-30,  14,-20,  20,-6, wh,ol);
+  drawFoot(-28, 0, 0.1, sk, ol);
+  drawFoot( 20, 0, 0.1, sk, ol);
+  roundRect(-12,-60,24,34,3,wh,ol);
+  cx.fillStyle=bl; cx.fillRect(-12,-28,24,6);
+  arm(-12,-56, -18,-40, -14,-28, wh,sk,ol);
+  arm( 12,-56,  14,-40,  12,-28, wh,sk,ol);
+  head(0,-68,sk,ol);
+  cx.restore();
+}
+
+// ── Hit effects ────────────────────────────────────────────────────────────
+const FX = [];
+function spawnFX(x,y,pts) { FX.push({x,y,pts,life:45}); sfx('score'); }
+function tickFX() {
+  for (let i=FX.length-1;i>=0;i--) {
+    FX[i].life--; FX[i].y-=0.6;
+    if (FX[i].life<=0) FX.splice(i,1);
+  }
+}
+function drawFX() {
+  FX.forEach(e=>{
+    cx.globalAlpha = e.life/45;
+    cx.fillStyle='#ffee00';
+    cx.font=`bold ${16+(45-e.life)*0.3}px "Courier New"`;
+    cx.textAlign='center'; cx.fillText(`+${e.pts}pts`,e.x,e.y);
+    cx.globalAlpha=1;
+  });
+}
+
+// ── HUD ────────────────────────────────────────────────────────────────────
+function drawHUD(p,c,round,timer) {
+  cx.fillStyle='rgba(0,0,0,0.72)';
+  cx.fillRect(0,0,W,52);
+
+  const hpW=280;
+  // Player
+  cx.fillStyle='#fff'; cx.font='bold 12px "Courier New"'; cx.textAlign='left';
+  cx.fillText(p.name, 12,14);
+  cx.fillStyle='#333'; cx.fillRect(10,18,hpW,16);
+  const pp=Math.max(0,p.hp/100);
+  cx.fillStyle=pp>.5?'#22cc44':pp>.25?'#ffaa00':'#ff2222';
+  cx.fillRect(10,18,hpW*pp,16);
+  cx.strokeStyle='#555'; cx.lineWidth=1; cx.strokeRect(10,18,hpW,16);
+  cx.fillStyle='#ffdd00'; cx.font='bold 16px "Courier New"';
+  cx.fillText(p.score, 10,48);
+
+  // CPU
+  cx.textAlign='right'; cx.fillStyle='#fff'; cx.font='bold 12px "Courier New"';
+  cx.fillText(c.name, W-12,14);
+  cx.fillStyle='#333'; cx.fillRect(W-10-hpW,18,hpW,16);
+  const cp=Math.max(0,c.hp/100);
+  cx.fillStyle=cp>.5?'#22cc44':cp>.25?'#ffaa00':'#ff2222';
+  cx.fillRect(W-10-hpW*cp,18,hpW*cp,16);
+  cx.strokeStyle='#555'; cx.lineWidth=1; cx.strokeRect(W-10-hpW,18,hpW,16);
+  cx.fillStyle='#ffdd00'; cx.font='bold 16px "Courier New"';
+  cx.fillText(c.score, W-10,48);
+
+  // Center: round + timer
+  cx.textAlign='center'; cx.fillStyle='#aaa'; cx.font='11px "Courier New"';
+  cx.fillText(`ROUND ${round}/3`,W/2,13);
+  cx.fillStyle=timer<=10?'#ff4444':'#ffdd00';
+  cx.font='bold 24px "Courier New"';
+  cx.fillText(Math.ceil(Math.max(0,timer)),W/2,42);
+
+  // Round win dots
+  for (let i=0;i<3;i++) {
+    cx.fillStyle = i<game.wins.p ? '#22cc44' : '#333';
+    cx.beginPath(); cx.arc(W/2-30+i*16,49,5,0,Math.PI*2); cx.fill();
+  }
+  for (let i=0;i<3;i++) {
+    cx.fillStyle = i<game.wins.c ? '#ff4444' : '#333';
+    cx.beginPath(); cx.arc(W/2+14+i*16,49,5,0,Math.PI*2); cx.fill();
+  }
+}
+
+// ── Collision ──────────────────────────────────────────────────────────────
+function hitTest(a,b) {
+  if (!a||!b) return false;
+  return a.x<b.x+b.w && a.x+a.w>b.x && a.y<b.y+b.h && a.y+a.h>b.y;
+}
+function checkHits(atk, def) {
+  const box=atk.atkBox;
+  if (box&&!atk.didHit&&hitTest(box,def.body)) {
+    let dmg = atk.state==='punch'?8:atk.state==='kick_f'?14:atk.state==='kick_r'?16:atk.state==='kick_h'?22:18;
+    const pts=def.hurt(dmg,atk.state);
+    if (pts>0) { atk.score+=pts; spawnFX(def.x, def.y-95, pts); }
+    atk.didHit=true;
+  }
+}
+
+// ── Announce overlay ───────────────────────────────────────────────────────
+function announce(text, sub='') {
+  cx.fillStyle='rgba(0,0,0,0.6)';
+  cx.fillRect(W/2-210,H/2-55,420,110);
+  cx.strokeStyle='#ffdd00'; cx.lineWidth=2;
+  cx.strokeRect(W/2-210,H/2-55,420,110);
+  cx.textAlign='center';
+  cx.fillStyle='#ffdd00'; cx.font='bold 40px "Courier New"';
+  cx.fillText(text, W/2, H/2+8);
+  if (sub) { cx.fillStyle='#aaa'; cx.font='14px "Courier New"'; cx.fillText(sub,W/2,H/2+34); }
+}
+
+// ── Main game object ───────────────────────────────────────────────────────
+const game = {
+  state: STATES.MENU,
+  round: 1, time: 60, elapsed: 0,
+  wins: {p:0, c:0},
+  annText:'', annSub:'', annTimer:0,
+  p: null, c: null,
+  init() {
+    this.p = new Fighter(180, 1, true, 'PLAYER', '#d40000');
+    this.c = new Fighter(620, -1, false, 'CPU',    '#111111');
+  },
+  startRound() {
+    this.init(); this.elapsed=0;
+    this.state=STATES.FIGHT;
+    this.annText=`ROUND ${this.round}`; this.annSub='FIGHT!'; this.annTimer=100;
+    sfx('bell');
+  },
+  endRound(winner) {
+    if (winner==='p') { this.wins.p++; this.annText='YOU WIN!'; this.annSub=''; sfx('bell'); }
+    else if (winner==='c') { this.wins.c++; this.annText='CPU WINS'; this.annSub=''; sfx('ko'); }
+    else { this.annText='TIME OUT'; this.annSub=this.p.score>this.c.score?'Player leads':'CPU leads'; }
+    this.state=STATES.ROUNDEND; this.annTimer=160;
+    setTimeout(()=>{
+      if (this.wins.p>=2||this.wins.c>=2||this.round>=3) {
+        this.state=STATES.OVER;
+        this.annText = this.wins.p>this.wins.c?'PLAYER WINS!':(this.wins.c>this.wins.p?'CPU WINS!':'DRAW!');
+        this.annSub='TAP or ENTER to play again';
+        sfx('end');
+      } else {
+        this.round++;
+        this.startRound();
+      }
+    }, 2600);
+  }
+};
+
+// ── Menu ───────────────────────────────────────────────────────────────────
+function drawMenu() {
+  drawBG(1); cx.fillRect(0,0,W,H);
+  cx.textAlign='center';
+
+  cx.fillStyle='#ffdd00'; cx.font='bold 64px "Courier New"';
+  cx.fillText('TVG', W/2, 105);
+  cx.fillStyle='#fff'; cx.font='bold 18px "Courier New"';
+  cx.fillText('TAEKWONDO  SPARRING', W/2, 140);
+
+  cx.fillStyle='#888'; cx.font='13px "Courier New"';
+  cx.fillText('Move: ← →    Jump: ↑    Crouch: ↓', W/2, 200);
+  cx.fillText('A: Punch   S: Front Kick   D: Roundhouse   F: High Kick', W/2, 222);
+  cx.fillText('SPACE: Block', W/2, 244);
+
+  // Preview fighters
+  drawF(Object.assign(new Fighter(240,1,true,'','#d40000'),{state:'kick_h',fIdx:2,sTimer:10,fTick:0,flash:0,iFrames:0,dir:1}));
+  drawF(Object.assign(new Fighter(560,-1,false,'','#111'),{state:'kick_r',fIdx:2,sTimer:10,fTick:0,flash:0,iFrames:0,dir:-1}));
+
+  if (Math.floor(Date.now()/600)%2===0) {
+    cx.fillStyle='#ffdd00'; cx.font='bold 17px "Courier New"';
+    cx.fillText('TAP  OR  PRESS  ENTER', W/2, 318);
+  }
+  cx.fillStyle='#444'; cx.font='11px "Courier New"';
+  cx.fillText('3 Rounds — Score points by landing kicks and punches', W/2, 355);
+  cx.fillText('Kick to head = 3pts  |  Kick to body = 2pts  |  Punch = 1pt', W/2, 372);
+}
+
+// ── Main Loop ──────────────────────────────────────────────────────────────
+let lastTs=0;
+function loop(ts) {
+  const dt=Math.min((ts-lastTs)/16.67,3); lastTs=ts;
+
+  if (game.state===STATES.MENU) {
+    drawMenu();
+    if (K['Enter']) { K['Enter']=false; game.round=1; game.wins={p:0,c:0}; game.startRound(); }
+  }
+  else if (game.state===STATES.FIGHT) {
+    if (game.annTimer>0) {
+      game.annTimer--;
+    } else {
+      game.elapsed += dt/60;
+      game.p.update(game.c);
+      game.c.update(game.p);
+      checkHits(game.p, game.c);
+      checkHits(game.c, game.p);
+      tickFX();
+      if      (game.p.hp<=0) game.endRound('c');
+      else if (game.c.hp<=0) game.endRound('p');
+      else if (game.elapsed>=game.time) game.endRound(game.p.score>game.c.score?'p':game.c.score>game.p.score?'c':'draw');
+    }
+    drawBG(game.round);
+    drawF(game.p); drawF(game.c);
+    drawFX();
+    drawHUD(game.p, game.c, game.round, game.time-game.elapsed);
+    if (game.annTimer>0) announce(game.annText, game.annSub);
+  }
+  else if (game.state===STATES.ROUNDEND) {
+    drawBG(game.round); drawF(game.p); drawF(game.c); drawFX();
+    drawHUD(game.p,game.c,game.round,0);
+    announce(game.annText, game.annSub);
+  }
+  else if (game.state===STATES.OVER) {
+    drawBG(game.round); drawF(game.p); drawF(game.c);
+    drawHUD(game.p,game.c,game.round,0);
+    announce(game.annText,'TAP or ENTER to play again');
+    if (K['Enter']) { K['Enter']=false; game.round=1; game.wins={p:0,c:0}; game.startRound(); }
+  }
+
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(ts=>{lastTs=ts; requestAnimationFrame(loop);});
+</script>
+</body>
+</html>
