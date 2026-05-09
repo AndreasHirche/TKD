@@ -167,6 +167,16 @@ const INTRO_STEPS = [
   {text:'KYONG YE!', dur:100, pose:'bow'},
   {text:'SIJAK!',    dur:65,  pose:'idle'}
 ];
+const CHAR_TYPES = [
+  {sk:'#f4c5a0', hr:'#1a0a00'},
+  {sk:'#f4c5a0', hr:'#1a0a00', f:true},
+  {sk:'#e8a060', hr:'#140800'},
+  {sk:'#e8a060', hr:'#140800', f:true},
+  {sk:'#c07040', hr:'#0e0500'},
+  {sk:'#c07040', hr:'#0e0500', f:true},
+  {sk:'#6b3010', hr:'#080200'},
+  {sk:'#6b3010', hr:'#080200', f:true},
+];
 
 // ── Matrix rain ────────────────────────────────────────────────────────────
 const HANGUL = '태권도가나다라마바사아자차카파하기공격방어발차기주먹겨루기단수련무예형마음일이삼사오육칠팔구십';
@@ -471,6 +481,8 @@ class Fighter {
     this.atkActive=false; this.didHit=false;
     this.flash=0; this.iFrames=0;
     this.aiCD=0; this.aiState='approach';
+    const ct = CHAR_TYPES[Math.floor(Math.random() * CHAR_TYPES.length)];
+    this.charSk = ct.sk; this.charHr = ct.hr; this.charFem = ct.f || false;
   }
   get body() { return {x:this.x-18,y:this.y-88,w:36,h:88}; }
   get atkBox() {
@@ -639,6 +651,7 @@ class Fighter {
 }
 
 // ── Draw Fighters ──────────────────────────────────────────────────────────
+let _drawHr = '#111', _drawFem = false;
 function roundRect(x,y,w,h,r,fill,stroke) {
   cx.beginPath();
   cx.moveTo(x+r,y); cx.lineTo(x+w-r,y);
@@ -666,7 +679,8 @@ function drawF(f) {
   cx.beginPath(); cx.ellipse(0, height-1, 20*srad, 5*srad, 0, 0, Math.PI*2); cx.fill();
   cx.globalAlpha = alpha;
 
-  const sk='#e8b870', wh='#f4f4ec', sh='#d0d0c8', bl=f.belt, ol='#2a2a2a';
+  const sk=f.charSk||'#e8b870', wh='#f4f4ec', sh='#d0d0c8', bl=f.belt, ol='#2a2a2a';
+  _drawHr = f.charHr||'#111'; _drawFem = f.charFem||false;
 
   switch(f.state){
     case 'idle': case 'walk_f': case 'walk_b': {
@@ -716,9 +730,16 @@ function torso(bx,by,wh,sh,bl,ol){
 function head(x,y,sk,ol){
   cx.fillStyle=sk; cx.strokeStyle=ol; cx.lineWidth=1.5;
   cx.beginPath(); cx.ellipse(x,y,9,11,0,0,Math.PI*2); cx.fill(); cx.stroke();
-  cx.fillStyle='#333'; // hair
-  cx.beginPath(); cx.ellipse(x,y-9,9,5,0,Math.PI,Math.PI*2); cx.fill();
-  cx.fillStyle='#111'; // eyes
+  cx.fillStyle=_drawHr;
+  if(_drawFem){
+    cx.beginPath(); cx.ellipse(x,y-9,10,6,0,Math.PI,Math.PI*2); cx.fill();
+    cx.fillRect(x-10,y-4,3,18);
+    cx.fillRect(x+7, y-4,3,18);
+    cx.beginPath(); cx.arc(x,y-15,3.5,0,Math.PI*2); cx.fill();
+  } else {
+    cx.beginPath(); cx.ellipse(x,y-9,9,5,0,Math.PI,Math.PI*2); cx.fill();
+  }
+  cx.fillStyle='#111';
   cx.fillRect(x-4,y-3,3,3); cx.fillRect(x+1,y-3,3,3);
 }
 // foot shape: pill oriented along +x from ankle (ax,ay); ang rotates it (0=forward flat)
@@ -800,28 +821,28 @@ function pose_kick_front(sk,wh,sh,bl,ol,t) {
   drawFoot(anklex, ankley, 1.0 - t*0.8, sk, ol);
 }
 function pose_kick_round(sk,wh,sh,bl,ol,t) {
-  const angle = t * 260 * Math.PI / 180; // 260° spin around own axis
-  const spinX  = Math.cos(angle);         // 1 → 0 → -1 → 0 → ~-0.17
-  const armPull = Math.abs(Math.sin(angle)); // 0 at start/180°, 1 at 90°/270°
-
+  const angle   = t * 260 * Math.PI / 180;
+  const spinX   = Math.cos(angle);
+  const armPull = Math.abs(Math.sin(angle));
   cx.save();
-  cx.scale(spinX, 1); // body compresses and flips as fighter spins
-  // Standing leg
-  leg(-6,-45, -9,-20, -12,-6, wh,ol);
-  drawFoot(-12, 0, 0.1, sk, ol);
+  cx.scale(spinX, 1);
+  // Standing leg: right side (positive x) stays planted
+  leg(6,-45, 9,-20, 12,-6, wh,ol);
+  drawFoot(12, 0, -0.1, sk, ol);
   torso(0,0,wh,sh,bl,ol);
-  // Arms pull in tight when edge-on, extend for balance when facing front/back
   arm(-13,-70, -20*(1-armPull*.8),-55, -24*(1-armPull*.8),-45, wh,sk,ol);
   arm( 13,-70,  16*(1-armPull*.8),-54,  18*(1-armPull*.8),-45, wh,sk,ol);
   head(0,-82,sk,ol);
-  cx.restore(); // end spin — kick leg drawn unscaled below
-
-  // Kicking leg always extends toward opponent regardless of body rotation
-  const kickT = Math.max(0, (t - 0.18) / 0.82);
-  const kneex = 14 + kickT*12, kneey = -58 + kickT*8;
-  const anklex = kneex + 6 + kickT*36, ankley = kneey + 12 - kickT*4;
-  leg(6,-46, kneex,kneey, anklex,ankley, wh,ol,12);
-  drawFoot(anklex, ankley, 0.6 - kickT*0.5, sk, ol);
+  // Kicking leg starts LEFT (away from opponent) — after 180° spinX goes negative,
+  // negative local x × negative spinX = positive visual x → kick lands toward opponent
+  const kickT  = Math.max(0, (t - 0.18) / 0.82);
+  const kneex  = -9  - kickT * 17;
+  const kneey  = -20 - kickT * 30;
+  const anklex = -12 - kickT * 56;
+  const ankley = -6  - kickT * 36;
+  leg(-6,-46, kneex,kneey, anklex,ankley, wh,ol,12);
+  drawFoot(anklex, ankley, 0.1 - kickT*0.7, sk, ol);
+  cx.restore();
 }
 function pose_kick_high(sk,wh,sh,bl,ol,t) {
   // support leg
@@ -1057,8 +1078,15 @@ function drawMenu() {
   cx.fillText('A: AP JOOMUK   S: AP CHA BUSIGI   D: DWIT CHAGI   F: DOLLYO CHAGI', W/2, 222);
 
   // Preview fighters
-  drawF(Object.assign(new Fighter(240,1,true,'','#d40000'),{state:'kick_h',fIdx:2,sTimer:10,fTick:0,flash:0,iFrames:0,dir:1}));
-  drawF(Object.assign(new Fighter(560,-1,false,'','#111'),{state:'kick_r',fIdx:2,sTimer:10,fTick:0,flash:0,iFrames:0,dir:-1}));
+  drawF(menuF_p); drawF(menuF_c);
+
+  // Five tenets of Taekwondo
+  cx.textAlign='center';
+  cx.fillStyle='rgba(255,221,0,0.5)'; cx.font='9px "Courier New"';
+  cx.fillText('— FIVE TENETS OF TAEKWONDO —', W/2, 246);
+  cx.fillStyle='rgba(200,220,255,0.82)'; cx.font='bold 11px "Courier New"';
+  cx.fillText('YE UI   ·   YOM CHI   ·   IN NAE', W/2, 263);
+  cx.fillText('GUK GI   ·   BACKJOOL BOOLGGOOL', W/2, 280);
 
   if (Math.floor(Date.now()/600)%2===0) {
     cx.fillStyle='#ffdd00'; cx.font='bold 17px "Courier New"';
@@ -1140,6 +1168,10 @@ function loop(ts) {
 
   requestAnimationFrame(loop);
 }
+// ── Menu preview fighters (created once to avoid per-frame random char flicker) ──
+const menuF_p = Object.assign(new Fighter(240,1,true,'','#d40000'), {state:'kick_h',fIdx:2,sTimer:10,fTick:0,flash:0,iFrames:0,dir:1});
+const menuF_c = Object.assign(new Fighter(560,-1,false,'','#111'), {state:'kick_r',fIdx:2,sTimer:10,fTick:0,flash:0,iFrames:0,dir:-1});
+
 requestAnimationFrame(ts=>{lastTs=ts; requestAnimationFrame(loop);});
 </script>
 </body>
