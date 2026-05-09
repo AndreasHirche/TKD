@@ -742,6 +742,16 @@ function head(x,y,sk,ol){
   cx.fillStyle='#111';
   cx.fillRect(x-4,y-3,3,3); cx.fillRect(x+1,y-3,3,3);
 }
+function head_back(x,y,sk,ol){
+  cx.fillStyle=sk; cx.strokeStyle=ol; cx.lineWidth=1.5;
+  cx.beginPath(); cx.ellipse(x,y,9,11,0,0,Math.PI*2); cx.fill(); cx.stroke();
+  // Back of head: full hair cap, no eyes visible
+  cx.fillStyle=_drawHr;
+  cx.beginPath(); cx.ellipse(x,y-3,10,9.5,0,0,Math.PI*2); cx.fill();
+  if(_drawFem){
+    cx.beginPath(); cx.arc(x,y-14,5,0,Math.PI*2); cx.fill(); // bun prominent at back
+  }
+}
 // foot shape: pill oriented along +x from ankle (ax,ay); ang rotates it (0=forward flat)
 function drawFoot(ax, ay, ang, sk, ol) {
   cx.save();
@@ -834,12 +844,22 @@ function pose_kick_round(sk,wh,sh,bl,ol,t) {
   cx.save();
   cx.scale(spinX, 1);
 
+  const showBack = spinX < -0.1; // past ~96° of spin → back facing viewer
+
   leg(6,-45, 9,-20, 12,-6, wh,ol);       // planted leg: right side, stays grounded
   drawFoot(12, 0, -0.1, sk, ol);
-  torso(0,0,wh,sh,bl,ol);
+  if (showBack) {
+    // Back view: plain gi back + center seam, no V-collar
+    roundRect(-13,-75,26,40,3,wh,ol);
+    cx.fillStyle=bl; cx.fillRect(-14,-38,28,7);
+    cx.strokeStyle=sh; cx.lineWidth=1.2;
+    cx.beginPath(); cx.moveTo(0,-75); cx.lineTo(0,-40); cx.stroke();
+  } else {
+    torso(0,0,wh,sh,bl,ol);
+  }
   arm(-13,-70, -20*(1-armPull*.8),-55, -24*(1-armPull*.8),-45, wh,sk,ol);
   arm( 13,-70,  16*(1-armPull*.8),-54,  18*(1-armPull*.8),-45, wh,sk,ol);
-  head(0,-82,sk,ol);
+  if (showBack) { head_back(0,-82,sk,ol); } else { head(0,-82,sk,ol); }
 
   // Kicking leg: starts left/away, chambers high as fighter turns away, then snaps out
   const kneex  = -8  - chamberT*8  - kickT*12;
