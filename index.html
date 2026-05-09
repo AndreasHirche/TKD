@@ -10,19 +10,19 @@
   html,body{width:100%;height:100%}
   body{background:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100%;overflow:hidden;font-family:'Courier New',monospace;user-select:none;-webkit-user-select:none}
   canvas{display:block;width:100%;height:auto;max-width:800px;border:2px solid #333;touch-action:none}
-  #keys{margin-top:8px;font-size:.9rem;color:#555;text-align:center;line-height:1.9}
-  #keys b{color:#aaa;background:#222;padding:1px 7px;border-radius:3px;border:1px solid #444;font-size:.9rem}
+  #keys{margin-top:8px;font-size:1rem;color:#555;text-align:center;line-height:1.9}
+  #keys b{color:#aaa;background:#222;padding:1px 8px;border-radius:3px;border:1px solid #444;font-size:1rem}
   /* ── Mobile controls ── */
   #ctrl-row{display:none;width:100%;max-width:800px;padding:8px 10px;justify-content:space-between;gap:6px;touch-action:none}
   .cside{display:flex;flex-direction:column;gap:6px;align-items:center}
   .crow{display:flex;gap:6px}
-  .cb{min-width:clamp(50px,13vw,64px);height:clamp(50px,13vw,64px);background:rgba(255,255,255,0.1);border:2px solid rgba(255,255,255,0.22);border-radius:50%;color:#ccc;font-size:clamp(.65rem,2.6vw,.84rem);font-weight:700;font-family:'Courier New',monospace;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.1;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:none;user-select:none;padding:2px}
-  .cb.wide{min-width:clamp(108px,28vw,140px);border-radius:99px}
-  .cb.act{min-width:clamp(82px,22vw,108px);height:clamp(50px,13vw,64px);border-radius:10px;border-color:rgba(200,40,40,0.5);color:#fca5a5;background:rgba(160,0,20,0.2);white-space:normal;font-size:clamp(.52rem,2vw,.66rem);padding:3px 5px}
+  .cb{min-width:clamp(56px,15vw,74px);height:clamp(56px,15vw,74px);background:rgba(255,255,255,0.1);border:2px solid rgba(255,255,255,0.22);border-radius:50%;color:#ccc;font-size:clamp(.72rem,2.8vw,.94rem);font-weight:700;font-family:'Courier New',monospace;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.1;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:none;user-select:none;padding:2px}
+  .cb.wide{min-width:clamp(116px,30vw,150px);border-radius:99px}
+  .cb.act{min-width:clamp(94px,25vw,122px);height:clamp(56px,15vw,74px);border-radius:10px;border-color:rgba(200,40,40,0.5);color:#fca5a5;background:rgba(160,0,20,0.2);white-space:normal;font-size:clamp(.56rem,2.2vw,.72rem);padding:3px 5px}
   .cb.on{background:rgba(255,220,0,0.3)!important;border-color:#ffdd00!important;color:#ffdd00!important}
   /* ── D-pad (diamond) ── */
-  .dpad{display:grid;grid-template-columns:repeat(3,clamp(50px,13vw,64px));grid-auto-rows:clamp(50px,13vw,64px);gap:4px}
-  .ph{width:clamp(50px,13vw,64px);height:clamp(50px,13vw,64px)}
+  .dpad{display:grid;grid-template-columns:repeat(3,clamp(56px,15vw,74px));grid-auto-rows:clamp(56px,15vw,74px);gap:4px}
+  .ph{width:clamp(56px,15vw,74px);height:clamp(56px,15vw,74px)}
   .dpad .cb{min-width:unset;width:100%;height:100%}
   /* portrait: canvas top, controls below */
   @media(pointer:coarse) and (orientation:portrait){
@@ -36,33 +36,33 @@
     body{overflow:hidden;flex-direction:row;justify-content:center;align-items:center}
     canvas{
       order:0;height:100dvh;width:auto;
-      max-width:min(calc(100dvh * 1.7391),calc(100vw - 258px));
+      max-width:min(calc(100dvh * 1.7391),calc(100vw - 272px));
       max-height:100dvh;border:none;flex-shrink:0
     }
     #ctrl-row{display:contents}
     #ctrl-left{
       order:-1;display:flex!important;
-      width:105px;height:100dvh;
+      width:112px;height:100dvh;
       align-items:center;justify-content:center;flex-shrink:0
     }
     #ctrl-right{
       order:1;display:flex!important;
-      width:148px;height:100dvh;
+      width:156px;height:100dvh;
       align-items:flex-end;justify-content:center;flex-shrink:0;padding-bottom:24px
     }
-    .dpad{grid-template-columns:repeat(3,32px);grid-auto-rows:32px;gap:3px}
-    .ph{width:32px;height:32px}
-    .dpad .cb{min-width:unset!important;width:32px!important;height:32px!important;font-size:.42rem!important}
+    .dpad{grid-template-columns:repeat(3,34px);grid-auto-rows:34px;gap:3px}
+    .ph{width:34px;height:34px}
+    .dpad .cb{min-width:unset!important;width:34px!important;height:34px!important;font-size:.44rem!important}
     .cb{
-      min-width:36px!important;height:36px!important;font-size:.48rem!important;
+      min-width:38px!important;height:38px!important;font-size:.5rem!important;
       background:rgba(255,255,255,0.07)!important;
       border-color:rgba(255,255,255,0.18)!important;
       color:rgba(255,255,255,0.55)!important
     }
-    .cb.wide{min-width:76px!important}
+    .cb.wide{min-width:80px!important}
     .cb.act{
-      min-width:66px!important;height:32px!important;border-radius:8px!important;
-      font-size:.42rem!important;white-space:normal!important;padding:2px 4px!important;
+      min-width:70px!important;height:34px!important;border-radius:8px!important;
+      font-size:.44rem!important;white-space:normal!important;padding:2px 4px!important;
       background:rgba(160,0,20,0.1)!important;
       border-color:rgba(200,40,40,0.22)!important;
       color:rgba(252,165,165,0.55)!important
@@ -78,7 +78,7 @@
 <body>
 <canvas id="c" width="800" height="460"></canvas>
 <div id="keys">
-  <b>← →</b> Move &nbsp; <b>↑</b> Jump &nbsp; <b>↓</b> Crouch &nbsp; <b>SPACE</b> MAKGI<br>
+  <b>← →</b> WEN / ORUN &nbsp; <b>↑</b> NOPUNDE &nbsp; <b>↓</b> NAJUNDE &nbsp; <b>SPACE</b> MAKGI<br>
   <b>A</b> AP JOOMUK &nbsp; <b>S</b> AP CHA BUSIGI &nbsp; <b>D</b> DWIT CHAGI &nbsp; <b>F</b> DOLLYO CHAGI
 </div>
 <div id="ctrl-row">
@@ -800,22 +800,28 @@ function pose_kick_front(sk,wh,sh,bl,ol,t) {
   drawFoot(anklex, ankley, 1.0 - t*0.8, sk, ol);
 }
 function pose_kick_round(sk,wh,sh,bl,ol,t) {
+  const angle = t * 260 * Math.PI / 180; // 260° spin around own axis
+  const spinX  = Math.cos(angle);         // 1 → 0 → -1 → 0 → ~-0.17
+  const armPull = Math.abs(Math.sin(angle)); // 0 at start/180°, 1 at 90°/270°
+
   cx.save();
-  cx.scale(Math.max(0.5, 1 - t * 0.5), 1); // body narrows as fighter pivots into spin
+  cx.scale(spinX, 1); // body compresses and flips as fighter spins
+  // Standing leg
   leg(-6,-45, -9,-20, -12,-6, wh,ol);
   drawFoot(-12, 0, 0.1, sk, ol);
   torso(0,0,wh,sh,bl,ol);
-  // Arms pull in tight during spin
-  const aw = 1 - t * 0.55;
-  arm(-13,-70, -18*aw,-54, -22*aw,-44, wh,sk,ol);
-  arm( 13,-70,  16*aw,-54,  18*aw,-45, wh,sk,ol);
-  head(t*6,-82,sk,ol);
-  // kicking leg sweeps around
-  const kneex = 14 + t*12, kneey = -58 + t*8;
-  const anklex = kneex + 6 + t*36, ankley = kneey + 12 - t*4;
+  // Arms pull in tight when edge-on, extend for balance when facing front/back
+  arm(-13,-70, -20*(1-armPull*.8),-55, -24*(1-armPull*.8),-45, wh,sk,ol);
+  arm( 13,-70,  16*(1-armPull*.8),-54,  18*(1-armPull*.8),-45, wh,sk,ol);
+  head(0,-82,sk,ol);
+  cx.restore(); // end spin — kick leg drawn unscaled below
+
+  // Kicking leg always extends toward opponent regardless of body rotation
+  const kickT = Math.max(0, (t - 0.18) / 0.82);
+  const kneex = 14 + kickT*12, kneey = -58 + kickT*8;
+  const anklex = kneex + 6 + kickT*36, ankley = kneey + 12 - kickT*4;
   leg(6,-46, kneex,kneey, anklex,ankley, wh,ol,12);
-  drawFoot(anklex, ankley, 0.6 - t*0.5, sk, ol);
-  cx.restore();
+  drawFoot(anklex, ankley, 0.6 - kickT*0.5, sk, ol);
 }
 function pose_kick_high(sk,wh,sh,bl,ol,t) {
   // support leg
@@ -1047,7 +1053,7 @@ function drawMenu() {
   cx.fillText('TAEKWONDO  SPARRING', W/2, 140);
 
   cx.fillStyle='#888'; cx.font='13px "Courier New"';
-  cx.fillText('Move: ← →    Jump: ↑    Crouch: ↓    SPACE: MAKGI', W/2, 200);
+  cx.fillText('WEN ←   ORUN →   NOPUNDE ↑   NAJUNDE ↓   SPACE: MAKGI', W/2, 200);
   cx.fillText('A: AP JOOMUK   S: AP CHA BUSIGI   D: DWIT CHAGI   F: DOLLYO CHAGI', W/2, 222);
 
   // Preview fighters
