@@ -35,6 +35,7 @@
     #keys{display:none}
     #ctrl-row{display:flex}
     body{justify-content:flex-start;overflow-y:auto}
+    canvas{max-height:42dvh}
   }
   /* landscape: controls beside canvas, not overlaid */
   @media(pointer:coarse) and (orientation:landscape){
@@ -60,11 +61,13 @@
     .ph{width:34px;height:34px}
     .dpad .cb{min-width:unset!important;width:34px!important;height:34px!important;font-size:.42rem!important}
     .cb{
-      min-width:38px!important;height:38px!important;font-size:.48rem!important;
-      background:rgba(255,255,255,0.1)!important;
-      border-color:rgba(255,255,255,0.25)!important;
-      color:rgba(255,255,255,0.65)!important
+      min-width:38px!important;height:38px!important;font-size:.48rem!important
     }
+    .cb-block{background:rgba(59,130,246,0.22)!important;border-color:rgba(96,165,250,0.72)!important;color:#bfdbfe!important}
+    .cb-punch{background:rgba(239,68,68,0.22)!important;border-color:rgba(248,113,113,0.72)!important;color:#fecaca!important}
+    .cb-hkick{background:rgba(168,85,247,0.22)!important;border-color:rgba(192,132,252,0.72)!important;color:#e9d5ff!important}
+    .cb-rkick{background:rgba(245,158,11,0.22)!important;border-color:rgba(251,191,36,0.72)!important;color:#fde68a!important}
+    .cb-kick{background:rgba(16,185,129,0.22)!important;border-color:rgba(52,211,153,0.72)!important;color:#a7f3d0!important}
     .act-grid{grid-template-columns:repeat(2,46px)!important;grid-auto-rows:44px!important;gap:4px!important}
     .act-grid .cb{font-size:.52rem!important;padding:4px 3px!important;line-height:1.2!important;border-radius:9px!important}
     .cb.on{filter:brightness(2.6) saturate(1.3)!important;border-color:rgba(255,255,255,0.95)!important}
@@ -218,130 +221,19 @@ function drawBG_r1() {
   cx.restore();
 }
 
-// Round 2 – Mannheimer Wasserturm (Friedrichsplatz)
+// Round 2 – M.png background image
+var _bgImg_r2 = null;
 function drawBG_r2() {
   cx.save();
-  const tx = 415; // tower center x
-
-  // Sky – bright Mannheim afternoon blue
-  const sky=cx.createLinearGradient(0,0,0,GY);
-  sky.addColorStop(0,'#1c3f7a'); sky.addColorStop(0.45,'#3a7bd5');
-  sky.addColorStop(1,'#a8cbee');
-  cx.fillStyle=sky; cx.fillRect(0,0,W,GY);
-
-  // Fluffy clouds
-  [[90,60,28],[620,43,22],[700,74,17]].forEach(([cx_,cy,r])=>{
-    cx.fillStyle='rgba(255,255,255,0.82)';
-    [[0,0,1],[r*.8,r*.15,.75],[-(r*.65),r*.1,.68]].forEach(([dx,dy,s])=>{
-      cx.beginPath(); cx.arc(cx_+dx,cy+dy,r*s,0,Math.PI*2); cx.fill();
-    });
-  });
-
-  // Flat Mannheim city silhouette in background
-  [[20,25,70],[112,18,52],[170,28,62],[245,14,46],[295,22,50],
-   [560,20,52],[612,16,42],[665,27,58],[728,15,48],[772,22,52]].forEach(([bx,bh,bw])=>{
-    cx.fillStyle='rgba(180,165,148,0.4)'; cx.fillRect(bx,GY-bh,bw,bh);
-  });
-
-  // Plane trees flanking the tower
-  function pTree(xt,h,r) {
-    cx.fillStyle='#5a8c38'; cx.fillRect(xt-3,GY-h,6,h);
-    const g=cx.createRadialGradient(xt-r*.2,GY-h-r*.1,2,xt,GY-h,r);
-    g.addColorStop(0,'#6ab040'); g.addColorStop(1,'#3a6e1a');
-    cx.fillStyle=g;
-    cx.beginPath(); cx.ellipse(xt,GY-h,r,r*.9,0,0,Math.PI*2); cx.fill();
+  if (!_bgImg_r2) {
+    _bgImg_r2 = new Image();
+    _bgImg_r2.src = 'M.png';
   }
-  [[98,52,18],[146,60,21],[192,68,23],[236,58,18],[278,45,15],
-   [550,46,16],[594,56,19],[640,65,22],[684,59,19],[728,48,16]].forEach(([x,h,r])=>pTree(x,h,r));
-
-  // Park ground
-  const grd=cx.createLinearGradient(0,GY,0,H);
-  grd.addColorStop(0,'#5a9c30'); grd.addColorStop(1,'#3a7020');
-  cx.fillStyle=grd; cx.fillRect(0,GY,W,H-GY);
-  cx.fillStyle='rgba(200,185,160,0.45)'; cx.fillRect(0,GY,W,6);
-
-  // Fountain oval (Jubiläumsbrunnen)
-  cx.fillStyle='rgba(80,145,210,0.5)';
-  cx.beginPath(); cx.ellipse(tx,372,106,14,0,0,Math.PI*2); cx.fill();
-  cx.strokeStyle='rgba(180,225,255,0.45)'; cx.lineWidth=1.5;
-  for(let wx=tx-88;wx<tx+90;wx+=22){
-    cx.beginPath(); cx.moveTo(wx,369); cx.lineTo(wx+11,373); cx.stroke();
+  if (_bgImg_r2.complete && _bgImg_r2.naturalWidth) {
+    cx.drawImage(_bgImg_r2, 0, 0, W, H);
+  } else {
+    cx.fillStyle = '#8a6030'; cx.fillRect(0, 0, W, H);
   }
-
-  // ── Wasserturm ─────────────────────────────────────────────────────────
-  const sand='#c8a870', sdark='#9a7840', slt='#e0c898';
-
-  // Base step
-  cx.fillStyle=slt;
-  cx.beginPath(); cx.moveTo(tx-66,376); cx.lineTo(tx-62,358);
-  cx.lineTo(tx+62,358); cx.lineTo(tx+66,376); cx.closePath(); cx.fill();
-
-  // Arcade cylinder (y 305→358)
-  cx.fillStyle=sand;
-  cx.beginPath(); cx.moveTo(tx-52,358); cx.lineTo(tx-46,305);
-  cx.lineTo(tx+46,305); cx.lineTo(tx+52,358); cx.closePath(); cx.fill();
-  // Shadow side
-  cx.fillStyle='rgba(80,50,10,0.1)';
-  cx.beginPath(); cx.moveTo(tx+18,358); cx.lineTo(tx+17,305);
-  cx.lineTo(tx+46,305); cx.lineTo(tx+52,358); cx.closePath(); cx.fill();
-  // Arch openings
-  cx.strokeStyle=sdark; cx.lineWidth=1.2;
-  for(let ax=tx-34;ax<=tx+34;ax+=22){
-    cx.beginPath(); cx.arc(ax,326,9,Math.PI,0); cx.stroke();
-    cx.strokeRect(ax-9,326,18,16);
-  }
-  // Top band of arcade
-  cx.fillStyle=slt; cx.fillRect(tx-50,297,100,8);
-  cx.fillStyle=sdark; cx.fillRect(tx-50,296,100,1.5);
-
-  // Shaft 1 (y 200→297)
-  cx.fillStyle=sand; cx.fillRect(tx-22,200,44,97);
-  cx.fillStyle='rgba(80,50,10,0.1)'; cx.fillRect(tx+8,200,14,97);
-  cx.strokeStyle=sdark; cx.lineWidth=0.6;
-  for(let ly=220;ly<295;ly+=20){
-    cx.beginPath(); cx.moveTo(tx-22,ly); cx.lineTo(tx+22,ly); cx.stroke();
-  }
-
-  // Balcony ring 1 (y 188→200)
-  cx.fillStyle=slt; cx.fillRect(tx-29,188,58,12);
-  cx.fillStyle=sdark; cx.fillRect(tx-29,187,58,1.5); cx.fillRect(tx-29,199,58,1.5);
-  for(let bx=tx-25;bx<tx+26;bx+=10){ cx.fillStyle=sdark; cx.fillRect(bx,188,5,11); }
-
-  // Shaft 2 (y 138→188)
-  cx.fillStyle=sand; cx.fillRect(tx-18,138,36,50);
-  cx.fillStyle='rgba(80,50,10,0.1)'; cx.fillRect(tx+8,138,10,50);
-
-  // Balcony ring 2 (y 127→138)
-  cx.fillStyle=slt; cx.fillRect(tx-23,127,46,11);
-  cx.fillStyle=sdark; cx.fillRect(tx-23,126,46,1.5); cx.fillRect(tx-23,137,46,1.5);
-
-  // Shaft 3 – narrow (y 90→127)
-  cx.fillStyle=sand; cx.fillRect(tx-14,90,28,37);
-  cx.fillStyle='rgba(80,50,10,0.1)'; cx.fillRect(tx+6,90,8,37);
-
-  // Dome pedestal (y 82→90)
-  cx.fillStyle=slt; cx.fillRect(tx-20,82,40,8);
-  cx.fillStyle=sdark; cx.fillRect(tx-20,81,40,1.5);
-
-  // Dome hemisphere (center y=82, radius 22 → top y=60)
-  cx.fillStyle=sand;
-  cx.beginPath(); cx.arc(tx,82,22,Math.PI,0); cx.fill();
-  cx.fillRect(tx-22,82,44,9);
-  cx.fillStyle=slt;
-  cx.beginPath(); cx.arc(tx-7,76,10,Math.PI*.1,Math.PI*.9); cx.fill();
-  cx.strokeStyle=sdark; cx.lineWidth=1;
-  cx.beginPath(); cx.arc(tx,82,22,Math.PI,0); cx.stroke();
-
-  // Lantern (y 50→62)
-  cx.fillStyle=sdark; cx.fillRect(tx-6,50,12,12);
-  cx.fillStyle=slt; cx.fillRect(tx-8,49,16,4);
-
-  // Spire (tip y=30)
-  cx.fillStyle='#7a5422';
-  cx.beginPath(); cx.moveTo(tx-4,50); cx.lineTo(tx+4,50); cx.lineTo(tx,30); cx.closePath(); cx.fill();
-  cx.fillStyle='#c8a030';
-  cx.beginPath(); cx.arc(tx,30,3.5,0,Math.PI*2); cx.fill();
-
   cx.restore();
 }
 
