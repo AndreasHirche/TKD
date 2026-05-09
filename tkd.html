@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>TKD — Taekwondo Sparring</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23111'/><text x='16' y='22' font-family='monospace' font-size='11' font-weight='900' fill='%23ffdd00' text-anchor='middle'>TKD</text></svg>">
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   html,body{width:100%;height:100%}
@@ -12,44 +13,53 @@
   #keys{margin-top:8px;font-size:.72rem;color:#555;text-align:center;line-height:2}
   #keys b{color:#aaa;background:#222;padding:1px 6px;border-radius:3px;border:1px solid #444}
   /* ── Mobile controls ── */
-  #controls{display:none;width:100%;max-width:800px;padding:8px 10px;justify-content:space-between;gap:6px;touch-action:none}
-  .cside{display:flex;flex-direction:column;gap:6px}
+  #ctrl-row{display:none;width:100%;max-width:800px;padding:8px 10px;justify-content:space-between;gap:6px;touch-action:none}
+  .cside{display:flex;flex-direction:column;gap:6px;align-items:center}
   .crow{display:flex;gap:6px}
-  .cb{min-width:clamp(44px,12vw,58px);height:clamp(44px,12vw,58px);background:rgba(255,255,255,0.1);border:2px solid rgba(255,255,255,0.22);border-radius:50%;color:#ccc;font-size:clamp(.6rem,2.5vw,.78rem);font-weight:700;font-family:'Courier New',monospace;display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:none;user-select:none}
+  .cb{min-width:clamp(44px,12vw,58px);height:clamp(44px,12vw,58px);background:rgba(255,255,255,0.1);border:2px solid rgba(255,255,255,0.22);border-radius:50%;color:#ccc;font-size:clamp(.55rem,2.2vw,.72rem);font-weight:700;font-family:'Courier New',monospace;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.1;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:none;user-select:none}
   .cb.wide{min-width:clamp(92px,25vw,122px);border-radius:99px}
   .cb.act{background:rgba(160,0,20,0.2);border-color:rgba(200,40,40,0.5);color:#fca5a5}
   .cb.on{background:rgba(255,220,0,0.3)!important;border-color:#ffdd00!important;color:#ffdd00!important}
+  /* ── D-pad (diamond) ── */
+  .dpad{display:grid;grid-template-columns:repeat(3,clamp(44px,12vw,58px));grid-auto-rows:clamp(44px,12vw,58px);gap:4px}
+  .ph{width:clamp(44px,12vw,58px);height:clamp(44px,12vw,58px)}
+  .dpad .cb{min-width:unset;width:100%;height:100%}
   /* portrait: canvas top, controls below */
   @media(pointer:coarse) and (orientation:portrait){
     #keys{display:none}
-    #controls{display:flex}
+    #ctrl-row{display:flex}
     body{justify-content:flex-start;overflow-y:auto}
   }
-  /* landscape: canvas fills screen, controls float as transparent overlay */
+  /* landscape: controls beside canvas, not overlaid */
   @media(pointer:coarse) and (orientation:landscape){
     #keys{display:none}
-    body{overflow:hidden;justify-content:center;align-items:center}
-    canvas{height:100dvh;width:auto;max-width:100vw;max-height:100dvh;border:none}
-    #controls{
-      display:flex;
-      position:fixed;top:0;left:50%;
-      transform:translateX(-50%);
-      width:min(100vw,calc(100dvh * 1.7391));
-      height:100dvh;
-      max-width:none;padding:10px;
-      align-items:flex-end;
-      background:transparent;
-      pointer-events:none;
-      z-index:10
+    body{overflow:hidden;flex-direction:row;justify-content:center;align-items:center}
+    canvas{
+      order:0;height:100dvh;width:auto;
+      max-width:min(calc(100dvh * 1.7391),calc(100vw - 210px));
+      max-height:100dvh;border:none;flex-shrink:0
     }
-    #controls .cside{pointer-events:all}
+    #ctrl-row{display:contents}
+    #ctrl-left{
+      order:-1;display:flex!important;
+      width:105px;height:100dvh;
+      align-items:center;justify-content:center;flex-shrink:0
+    }
+    #ctrl-right{
+      order:1;display:flex!important;
+      width:105px;height:100dvh;
+      align-items:flex-end;justify-content:center;flex-shrink:0;padding-bottom:24px
+    }
+    .dpad{grid-template-columns:repeat(3,32px);grid-auto-rows:32px;gap:3px}
+    .ph{width:32px;height:32px}
+    .dpad .cb{min-width:unset!important;width:32px!important;height:32px!important;font-size:.42rem!important}
     .cb{
-      min-width:clamp(40px,9vw,54px);height:clamp(40px,9vw,54px);
+      min-width:36px!important;height:36px!important;font-size:.48rem!important;
       background:rgba(255,255,255,0.07)!important;
       border-color:rgba(255,255,255,0.18)!important;
       color:rgba(255,255,255,0.55)!important
     }
-    .cb.wide{min-width:clamp(84px,19vw,114px)}
+    .cb.wide{min-width:76px!important}
     .cb.act{
       background:rgba(160,0,20,0.1)!important;
       border-color:rgba(200,40,40,0.22)!important;
@@ -69,18 +79,15 @@
   <b>← →</b> Move &nbsp; <b>↑</b> Jump &nbsp; <b>↓</b> Crouch &nbsp; <b>A</b> Punch &nbsp;
   <b>S</b> Front Kick &nbsp; <b>D</b> Roundhouse &nbsp; <b>F</b> High Kick &nbsp; <b>SPACE</b> Block
 </div>
-<div id="controls">
-  <div class="cside">
-    <div class="crow">
-      <div class="cb" data-key="ArrowLeft">←</div>
-      <div class="cb" data-key="ArrowUp">↑</div>
-      <div class="cb" data-key="ArrowRight">→</div>
-    </div>
-    <div class="crow">
-      <div class="cb wide" data-key="ArrowDown">▼ CROUCH</div>
+<div id="ctrl-row">
+  <div id="ctrl-left" class="cside">
+    <div class="dpad">
+      <div class="ph"></div><div class="cb" data-key="ArrowUp">NOPUNDE</div><div class="ph"></div>
+      <div class="cb" data-key="ArrowLeft">WEN</div><div class="ph"></div><div class="cb" data-key="ArrowRight">ORUN</div>
+      <div class="ph"></div><div class="cb" data-key="ArrowDown">NAJUNDE</div><div class="ph"></div>
     </div>
   </div>
-  <div class="cside">
+  <div id="ctrl-right" class="cside">
     <div class="crow">
       <div class="cb act" data-key="KeyA">PUNCH</div>
       <div class="cb act" data-key="KeyS">KICK</div>
@@ -143,15 +150,20 @@ document.querySelectorAll('.cb').forEach(btn => {
 });
 cv.addEventListener('pointerdown', () => {
   if (AC.state === 'suspended') AC.resume();
-  if (game.state===STATES.MENU || game.state===STATES.OVER) {
+  if (game.state===STATES.MENU || (game.state===STATES.OVER && game.annSub)) {
     K['Enter']=true; setTimeout(()=>K['Enter']=false, 100);
   }
 });
 
 // ── Constants ──────────────────────────────────────────────────────────────
 const STATES = {
-  MENU:'menu', FIGHT:'fight', PAUSE:'pause', ROUNDEND:'roundend', OVER:'over'
+  MENU:'menu', INTRO:'intro', FIGHT:'fight', PAUSE:'pause', ROUNDEND:'roundend', OVER:'over'
 };
+const INTRO_STEPS = [
+  {text:'CHARYOT!',  dur:80,  pose:'idle'},
+  {text:'KYONG YE!', dur:100, pose:'crouch'},
+  {text:'SIJAK!',    dur:65,  pose:'idle'}
+];
 
 // ── Background ─────────────────────────────────────────────────────────────
 function drawBG(round) {
@@ -936,6 +948,7 @@ const game = {
   round: 1, time: 60, elapsed: 0,
   wins: {p:0, c:0},
   annText:'', annSub:'', annTimer:0,
+  introStep:0, introTimer:0,
   p: null, c: null,
   init() {
     this.p = new Fighter(180, 1, true, 'PLAYER', '#d40000');
@@ -943,8 +956,8 @@ const game = {
   },
   startRound() {
     this.init(); this.elapsed=0;
-    this.state=STATES.FIGHT;
-    this.annText=`ROUND ${this.round}`; this.annSub='FIGHT!'; this.annTimer=100;
+    this.state=STATES.INTRO;
+    this.introStep=0; this.introTimer=INTRO_STEPS[0].dur;
     sfx('bell');
   },
   endRound(winner) {
@@ -955,9 +968,13 @@ const game = {
     setTimeout(()=>{
       if (this.wins.p>=2||this.wins.c>=2||this.round>=3) {
         this.state=STATES.OVER;
-        this.annText = this.wins.p>this.wins.c?'PLAYER WINS!':(this.wins.c>this.wins.p?'CPU WINS!':'DRAW!');
-        this.annSub='TAP or ENTER to play again';
-        sfx('end');
+        this.annText='HAE SAN!'; this.annSub='';
+        sfx('bell');
+        setTimeout(()=>{
+          this.annText = this.wins.p>this.wins.c?'PLAYER WINS!':(this.wins.c>this.wins.p?'CPU WINS!':'DRAW!');
+          this.annSub='TAP or ENTER to play again';
+          sfx('end');
+        }, 1500);
       } else {
         this.round++;
         this.startRound();
@@ -1003,6 +1020,28 @@ function loop(ts) {
     drawMenu();
     if (K['Enter']) { K['Enter']=false; game.round=1; game.wins={p:0,c:0}; game.startRound(); }
   }
+  else if (game.state===STATES.INTRO) {
+    const step = INTRO_STEPS[game.introStep];
+    if (step.pose==='crouch') {
+      const ps=game.p.state, cs=game.c.state;
+      game.p.state='crouch'; game.c.state='crouch';
+      drawBG(game.round); drawF(game.p); drawF(game.c);
+      game.p.state=ps; game.c.state=cs;
+    } else {
+      drawBG(game.round); drawF(game.p); drawF(game.c);
+    }
+    drawHUD(game.p,game.c,game.round,game.time);
+    announce(step.text);
+    game.introTimer--;
+    if (game.introTimer<=0) {
+      game.introStep++;
+      if (game.introStep>=INTRO_STEPS.length) {
+        game.state=STATES.FIGHT; game.annText=''; game.annSub=''; game.annTimer=0;
+      } else {
+        game.introTimer=INTRO_STEPS[game.introStep].dur;
+      }
+    }
+  }
   else if (game.state===STATES.FIGHT) {
     if (game.annTimer>0) {
       game.annTimer--;
@@ -1031,8 +1070,8 @@ function loop(ts) {
   else if (game.state===STATES.OVER) {
     drawBG(game.round); drawF(game.p); drawF(game.c);
     drawHUD(game.p,game.c,game.round,0);
-    announce(game.annText,'TAP or ENTER to play again');
-    if (K['Enter']) { K['Enter']=false; game.round=1; game.wins={p:0,c:0}; game.startRound(); }
+    announce(game.annText, game.annSub);
+    if (game.annSub && K['Enter']) { K['Enter']=false; game.round=1; game.wins={p:0,c:0}; game.startRound(); }
   }
 
   requestAnimationFrame(loop);
