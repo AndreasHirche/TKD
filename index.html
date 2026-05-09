@@ -540,9 +540,9 @@ class Fighter {
         if(this.fIdx>=6) this.state='idle';
         break;
       case 'kick_r':
-        if(this.fIdx===1) this.atkActive=true;
-        if(this.fIdx>=3) this.atkActive=false;
-        if(this.fIdx>=6) this.state='idle';
+        if(this.fIdx===5) this.atkActive=true;
+        if(this.fIdx>=7) this.atkActive=false;
+        if(this.fIdx>=9) this.state='idle';
         break;
       case 'kick_h':
         if(this.fIdx===1) this.atkActive=true;
@@ -692,7 +692,7 @@ function drawF(f) {
     case 'jump':     pose_jump(sk,wh,sh,bl,ol); break;
     case 'punch':    pose_punch(sk,wh,sh,bl,ol,Math.min(f.fIdx/2,1)); break;
     case 'kick_f':   pose_kick_front(sk,wh,sh,bl,ol,Math.min(f.fIdx*0.6,1)); break;
-    case 'kick_r':   pose_kick_round(sk,wh,sh,bl,ol,Math.min(f.fIdx*0.65,1)); break;
+    case 'kick_r':   pose_kick_round(sk,wh,sh,bl,ol,Math.min(f.fIdx/7,1)); break;
     case 'kick_h':   pose_kick_high(sk,wh,sh,bl,ol,Math.min(f.fIdx*0.55,1)); break;
     case 'kick_j':   pose_kick_jump(sk,wh,sh,bl,ol); break;
     case 'block':    pose_block(sk,wh,sh,bl,ol); break;
@@ -821,27 +821,33 @@ function pose_kick_front(sk,wh,sh,bl,ol,t) {
   drawFoot(anklex, ankley, 1.0 - t*0.8, sk, ol);
 }
 function pose_kick_round(sk,wh,sh,bl,ol,t) {
-  const angle   = t * 260 * Math.PI / 180;
-  const spinX   = Math.cos(angle);
-  const armPull = Math.abs(Math.sin(angle));
+  const angle    = t * 260 * Math.PI / 180;
+  const spinX    = Math.cos(angle);
+  const armPull  = Math.abs(Math.sin(angle));
+
+  // Phase 1 (t 0→0.5): fighter turns away, kicking leg lifts/chambers on the left (away) side
+  // Phase 2 (t 0.5→1.0): back is visible (spinX<0), kick snaps outward —
+  //   local -x × negative spinX = positive visual x = toward opponent
+  const chamberT = Math.min(1, t * 2);
+  const kickT    = Math.max(0, t * 2 - 1);
+
   cx.save();
   cx.scale(spinX, 1);
-  // Standing leg: right side (positive x) stays planted
-  leg(6,-45, 9,-20, 12,-6, wh,ol);
+
+  leg(6,-45, 9,-20, 12,-6, wh,ol);       // planted leg: right side, stays grounded
   drawFoot(12, 0, -0.1, sk, ol);
   torso(0,0,wh,sh,bl,ol);
   arm(-13,-70, -20*(1-armPull*.8),-55, -24*(1-armPull*.8),-45, wh,sk,ol);
   arm( 13,-70,  16*(1-armPull*.8),-54,  18*(1-armPull*.8),-45, wh,sk,ol);
   head(0,-82,sk,ol);
-  // Kicking leg starts LEFT (away from opponent) — after 180° spinX goes negative,
-  // negative local x × negative spinX = positive visual x → kick lands toward opponent
-  const kickT  = Math.max(0, (t - 0.18) / 0.82);
-  const kneex  = -9  - kickT * 17;
-  const kneey  = -20 - kickT * 30;
-  const anklex = -12 - kickT * 56;
-  const ankley = -6  - kickT * 36;
+
+  // Kicking leg: starts left/away, chambers high as fighter turns away, then snaps out
+  const kneex  = -8  - chamberT*8  - kickT*12;
+  const kneey  = -18 - chamberT*32 + kickT*14;
+  const anklex = -10 - chamberT*10 - kickT*56;
+  const ankley = -4  - chamberT*38 + kickT*20;
   leg(-6,-46, kneex,kneey, anklex,ankley, wh,ol,12);
-  drawFoot(anklex, ankley, 0.1 - kickT*0.7, sk, ol);
+  drawFoot(anklex, ankley, 0.15 - kickT*0.9, sk, ol);
   cx.restore();
 }
 function pose_kick_high(sk,wh,sh,bl,ol,t) {
