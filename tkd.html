@@ -221,13 +221,13 @@ function drawBG_r1() {
   cx.restore();
 }
 
-// Round 2 – M.png background image
+// Round 2 – M2.png background image
 var _bgImg_r2 = null;
 function drawBG_r2() {
   cx.save();
   if (!_bgImg_r2) {
     _bgImg_r2 = new Image();
-    _bgImg_r2.src = 'M.png';
+    _bgImg_r2.src = 'M2.png';
   }
   if (_bgImg_r2.complete && _bgImg_r2.naturalWidth) {
     cx.drawImage(_bgImg_r2, 0, 0, W, H);
