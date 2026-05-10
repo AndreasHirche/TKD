@@ -1060,10 +1060,10 @@ const game = {
 // ── Menu ───────────────────────────────────────────────────────────────────
 function drawMenu() {
   drawMatrixFrame();
-  cx.fillStyle='rgba(0,0,0,0.45)'; cx.fillRect(0,0,W,H);
+  cx.fillStyle='rgba(0,0,0,0.5)'; cx.fillRect(0,0,W,H);
   cx.textAlign='center';
-  cx.shadowColor='rgba(0,0,0,0.9)'; cx.shadowBlur=8;
 
+  cx.fillStyle='rgba(0,0,0,0.6)'; cx.fillRect(W/2-220,62,440,98);
   cx.fillStyle='#ffdd00'; cx.font='bold 72px "Courier New"';
   cx.fillText('TVG', W/2, 108);
   cx.fillStyle='#fff'; cx.font='bold 22px "Courier New"';
@@ -1091,11 +1091,9 @@ function drawMenu() {
     cx.fillStyle='#ffdd00'; cx.font='bold 20px "Courier New"';
     cx.fillText('TAP  OR  PRESS  ENTER', W/2, 358);
   }
-  cx.shadowBlur=0;
   cx.fillStyle='#666'; cx.font='12px "Courier New"';
   cx.fillText('3 Rounds — Score points by landing kicks and punches', W/2, 380);
   cx.fillText('Kick to head = 3pts  |  Kick to body = 2pts  |  Punch = 1pt', W/2, 396);
-  cx.shadowColor='transparent';
 }
 
 // ── Main Loop ──────────────────────────────────────────────────────────────
@@ -1171,8 +1169,8 @@ function loop(ts) {
   requestAnimationFrame(loop);
 }
 // ── Menu preview fighters (created once to avoid per-frame random char flicker) ──
-const menuF_p = Object.assign(new Fighter(240,1,true,'','#d40000'), {state:'kick_h',fIdx:2,sTimer:10,fTick:0,flash:0,iFrames:0,dir:1});
-const menuF_c = Object.assign(new Fighter(560,-1,false,'','#111'), {state:'kick_h',fIdx:3,sTimer:10,fTick:0,flash:0,iFrames:0,dir:-1});
+const menuF_p = Object.assign(new Fighter(100,1,true,'','#d40000'), {state:'kick_h',fIdx:2,sTimer:10,fTick:0,flash:0,iFrames:0,dir:1});
+const menuF_c = Object.assign(new Fighter(700,-1,false,'','#111'), {state:'kick_h',fIdx:3,sTimer:10,fTick:0,flash:0,iFrames:0,dir:-1});
 
 requestAnimationFrame(ts=>{lastTs=ts; requestAnimationFrame(loop);});
 </script>
