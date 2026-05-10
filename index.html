@@ -1018,7 +1018,7 @@ function announce(text, sub='') {
 
 // ── Main game object ───────────────────────────────────────────────────────
 const game = {
-  state: STATES.MATRIX,
+  state: STATES.MENU,
   round: 1, time: 60, elapsed: 0,
   wins: {p:0, c:0},
   annText:'', annSub:'', annTimer:0,
@@ -1060,38 +1060,42 @@ const game = {
 // ── Menu ───────────────────────────────────────────────────────────────────
 function drawMenu() {
   drawMatrixFrame();
+  cx.fillStyle='rgba(0,0,0,0.45)'; cx.fillRect(0,0,W,H);
   cx.textAlign='center';
+  cx.shadowColor='rgba(0,0,0,0.9)'; cx.shadowBlur=8;
 
-  cx.fillStyle='#ffdd00'; cx.font='bold 64px "Courier New"';
-  cx.fillText('TVG', W/2, 105);
-  cx.fillStyle='#fff'; cx.font='bold 18px "Courier New"';
-  cx.fillText('TAEKWONDO  SPARRING', W/2, 140);
+  cx.fillStyle='#ffdd00'; cx.font='bold 72px "Courier New"';
+  cx.fillText('TVG', W/2, 108);
+  cx.fillStyle='#fff'; cx.font='bold 22px "Courier New"';
+  cx.fillText('TAEKWONDO  SPARRING', W/2, 144);
 
-  cx.fillStyle='#888'; cx.font='13px "Courier New"';
+  cx.fillStyle='#aaa'; cx.font='13px "Courier New"';
   cx.fillText('WEN ←   ORUN →   NOPUNDE ↑   NAJUNDE ↓   SPACE: MAKGI', W/2, 200);
-  cx.fillText('A: AP JOOMUK   S: AP CHA BUSIGI   D: DWIT CHAGI   F: DOLLYO CHAGI', W/2, 222);
+  cx.fillText('A: AP JOOMUK   S: AP CHA BUSIGI   D: DWIT CHAGI   F: DOLLYO CHAGI', W/2, 218);
 
   // Preview fighters
   drawF(menuF_p); drawF(menuF_c);
 
   // Die fünf Grundsätze des Taekwondo
   cx.textAlign='center';
-  cx.fillStyle='rgba(255,221,0,0.7)'; cx.font='bold 10px "Courier New"';
-  cx.fillText('Die fünf Grundsätze des Taekwondo', W/2, 246);
-  cx.fillStyle='rgba(200,220,255,0.85)'; cx.font='11px "Courier New"';
-  cx.fillText('예의  Ye-Ui — Höflichkeit', W/2, 262);
-  cx.fillText('염치  Yom-Chi — Aufrichtigkeit', W/2, 274);
-  cx.fillText('인내  In-Nae — Ausdauer', W/2, 286);
-  cx.fillText('극기  Guk-Gi — Selbstbeherrschung', W/2, 298);
-  cx.fillText('백절불굴  Baek-Jeol-Bul-Gul — Unbezwingbarer Geist', W/2, 310);
+  cx.fillStyle='#ffdd00'; cx.font='bold 13px "Courier New"';
+  cx.fillText('Die fünf Grundsätze des Taekwondo', W/2, 250);
+  cx.fillStyle='rgba(210,230,255,0.95)'; cx.font='13px "Courier New"';
+  cx.fillText('예의  Ye-Ui — Höflichkeit', W/2, 268);
+  cx.fillText('염치  Yom-Chi — Aufrichtigkeit', W/2, 283);
+  cx.fillText('인내  In-Nae — Ausdauer', W/2, 298);
+  cx.fillText('극기  Guk-Gi — Selbstbeherrschung', W/2, 313);
+  cx.fillText('백절불굴  Baek-Jeol-Bul-Gul — Unbezwingbarer Geist', W/2, 328);
 
   if (Math.floor(Date.now()/600)%2===0) {
-    cx.fillStyle='#ffdd00'; cx.font='bold 17px "Courier New"';
-    cx.fillText('TAP  OR  PRESS  ENTER', W/2, 332);
+    cx.fillStyle='#ffdd00'; cx.font='bold 20px "Courier New"';
+    cx.fillText('TAP  OR  PRESS  ENTER', W/2, 358);
   }
-  cx.fillStyle='#444'; cx.font='11px "Courier New"';
-  cx.fillText('3 Rounds — Score points by landing kicks and punches', W/2, 352);
-  cx.fillText('Kick to head = 3pts  |  Kick to body = 2pts  |  Punch = 1pt', W/2, 370);
+  cx.shadowBlur=0;
+  cx.fillStyle='#666'; cx.font='12px "Courier New"';
+  cx.fillText('3 Rounds — Score points by landing kicks and punches', W/2, 380);
+  cx.fillText('Kick to head = 3pts  |  Kick to body = 2pts  |  Punch = 1pt', W/2, 396);
+  cx.shadowColor='transparent';
 }
 
 // ── Main Loop ──────────────────────────────────────────────────────────────
@@ -1106,6 +1110,7 @@ function loop(ts) {
     if (mtxAge>=MTX_DUR || K['Enter']) { K['Enter']=false; game.state=STATES.MENU; }
   }
   else if (game.state===STATES.MENU) {
+    if (mtxAge===0) { cx.fillStyle='#000'; cx.fillRect(0,0,W,H); }
     drawMenu();
     if (K['Enter']) { K['Enter']=false; game.round=1; game.wins={p:0,c:0}; game.startRound(); }
   }
