@@ -1060,16 +1060,16 @@ const game = {
 // ── Menu ───────────────────────────────────────────────────────────────────
 function drawMenu() {
   drawMatrixFrame();
-  cx.fillStyle='rgba(0,0,0,0.5)'; cx.fillRect(0,0,W,H);
   cx.textAlign='center';
 
-  cx.fillStyle='rgba(0,0,0,0.6)'; cx.fillRect(W/2-220,62,440,98);
+  cx.fillStyle='rgba(0,0,0,0.62)'; cx.fillRect(W/2-220,62,440,98);
   cx.fillStyle='#ffdd00'; cx.font='bold 72px "Courier New"';
   cx.fillText('TVG', W/2, 108);
   cx.fillStyle='#fff'; cx.font='bold 22px "Courier New"';
   cx.fillText('TAEKWONDO  SPARRING', W/2, 144);
 
-  cx.fillStyle='#aaa'; cx.font='13px "Courier New"';
+  cx.fillStyle='rgba(0,0,0,0.55)'; cx.fillRect(W/2-340,186,680,42);
+  cx.fillStyle='#bbb'; cx.font='13px "Courier New"';
   cx.fillText('WEN ←   ORUN →   NOPUNDE ↑   NAJUNDE ↓   SPACE: MAKGI', W/2, 200);
   cx.fillText('A: AP JOOMUK   S: AP CHA BUSIGI   D: DWIT CHAGI   F: DOLLYO CHAGI', W/2, 218);
 
@@ -1077,6 +1077,7 @@ function drawMenu() {
   drawF(menuF_p); drawF(menuF_c);
 
   // Die fünf Grundsätze des Taekwondo
+  cx.fillStyle='rgba(0,0,0,0.55)'; cx.fillRect(W/2-290,236,580,116);
   cx.textAlign='center';
   cx.fillStyle='#ffdd00'; cx.font='bold 13px "Courier New"';
   cx.fillText('Die fünf Grundsätze des Taekwondo', W/2, 250);
@@ -1091,7 +1092,7 @@ function drawMenu() {
     cx.fillStyle='#ffdd00'; cx.font='bold 20px "Courier New"';
     cx.fillText('TAP  OR  PRESS  ENTER', W/2, 358);
   }
-  cx.fillStyle='#666'; cx.font='12px "Courier New"';
+  cx.fillStyle='#555'; cx.font='12px "Courier New"';
   cx.fillText('3 Rounds — Score points by landing kicks and punches', W/2, 380);
   cx.fillText('Kick to head = 3pts  |  Kick to body = 2pts  |  Punch = 1pt', W/2, 396);
 }
