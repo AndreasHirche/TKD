@@ -1110,6 +1110,7 @@ function loop(ts) {
   }
   else if (game.state===STATES.MENU) {
     if (mtxAge===0) { cx.fillStyle='#000'; cx.fillRect(0,0,W,H); }
+    mtxAge++;
     drawMenu();
     if (K['Enter']) { K['Enter']=false; game.round=1; game.wins={p:0,c:0}; game.startRound(); }
   }
