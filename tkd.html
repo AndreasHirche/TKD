@@ -18,10 +18,9 @@
   .crow{display:flex;gap:6px}
   .cb{min-width:clamp(52px,13vw,84px);height:clamp(52px,13vw,84px);background:rgba(255,255,255,0.13);border:2px solid rgba(255,255,255,0.35);border-radius:50%;color:#e8e8e8;font-size:clamp(.72rem,3vw,1.05rem);font-weight:700;font-family:'Courier New',monospace;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.1;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:none;user-select:none;padding:2px}
   .cb.on{filter:brightness(2.4) saturate(1.3)!important;border-color:rgba(255,255,255,0.95)!important}
-  /* ── D-pad (diamond) ── */
-  .dpad{display:grid;grid-template-columns:repeat(3,clamp(52px,13vw,84px));grid-auto-rows:clamp(52px,13vw,84px);gap:4px}
-  .ph{width:clamp(52px,13vw,84px);height:clamp(52px,13vw,84px)}
-  .dpad .cb{min-width:unset;width:100%;height:100%}
+  /* ── Joystick ── */
+  #joystick-base{width:clamp(100px,24vw,120px);height:clamp(100px,24vw,120px);background:rgba(255,255,255,0.08);border:2px solid rgba(255,255,255,0.35);border-radius:50%;position:relative;touch-action:none;flex-shrink:0}
+  #joystick-knob{width:44px;height:44px;background:rgba(255,255,255,0.22);border:2px solid rgba(255,255,255,0.7);border-radius:50%;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none}
   /* ── Action button grid ── */
   .act-grid{display:grid;grid-template-columns:repeat(2,clamp(76px,19vw,114px));grid-auto-rows:clamp(76px,19vw,114px);gap:8px}
   .act-grid .cb{min-width:unset!important;width:100%!important;height:100%!important;border-radius:15px!important;white-space:normal!important;font-size:clamp(.68rem,2.6vw,.88rem)!important;font-weight:900!important;padding:6px 5px!important;line-height:1.3!important;border-width:2.5px!important}
@@ -32,10 +31,11 @@
   .cb-kick{background:rgba(16,185,129,0.22)!important;border-color:rgba(52,211,153,0.72)!important;color:#a7f3d0!important}
   /* portrait: canvas top, controls below */
   @media(pointer:coarse) and (orientation:portrait){
-    #keys{display:none}
+    #keys{font-size:1.05rem;color:#777;padding:4px 10px}
     #ctrl-row{display:flex}
     body{justify-content:flex-start;overflow-y:auto;overflow-x:hidden}
-    canvas{max-height:42dvh}
+    canvas{max-height:40dvh}
+    #joystick-base{width:clamp(100px,24vw,124px)!important;height:clamp(100px,24vw,124px)!important}
   }
   /* landscape: controls beside canvas, not overlaid */
   @media(pointer:coarse) and (orientation:landscape){
@@ -57,19 +57,16 @@
       width:128px;height:100dvh;
       align-items:center;justify-content:center;flex-shrink:0;padding-bottom:12px;overflow:hidden
     }
-    .dpad{grid-template-columns:repeat(3,34px);grid-auto-rows:34px;gap:3px}
-    .ph{width:34px;height:34px}
-    .dpad .cb{min-width:unset!important;width:34px!important;height:34px!important;font-size:.42rem!important}
-    .cb{
-      min-width:38px!important;height:38px!important;font-size:.48rem!important
-    }
+    #joystick-base{width:80px!important;height:80px!important}
+    #joystick-knob{width:34px!important;height:34px!important}
+    .cb{min-width:38px!important;height:38px!important;font-size:.55rem!important}
     .cb-block{background:rgba(59,130,246,0.22)!important;border-color:rgba(96,165,250,0.72)!important;color:#bfdbfe!important}
     .cb-punch{background:rgba(239,68,68,0.22)!important;border-color:rgba(248,113,113,0.72)!important;color:#fecaca!important}
     .cb-hkick{background:rgba(168,85,247,0.22)!important;border-color:rgba(192,132,252,0.72)!important;color:#e9d5ff!important}
     .cb-rkick{background:rgba(245,158,11,0.22)!important;border-color:rgba(251,191,36,0.72)!important;color:#fde68a!important}
     .cb-kick{background:rgba(16,185,129,0.22)!important;border-color:rgba(52,211,153,0.72)!important;color:#a7f3d0!important}
     .act-grid{grid-template-columns:repeat(2,46px)!important;grid-auto-rows:44px!important;gap:4px!important}
-    .act-grid .cb{font-size:.52rem!important;padding:4px 3px!important;line-height:1.2!important;border-radius:9px!important}
+    .act-grid .cb{font-size:.55rem!important;padding:4px 3px!important;line-height:1.2!important;border-radius:9px!important}
     .cb.on{filter:brightness(2.6) saturate(1.3)!important;border-color:rgba(255,255,255,0.95)!important}
   }
 </style>
@@ -82,11 +79,7 @@
 </div>
 <div id="ctrl-row">
   <div id="ctrl-left" class="cside">
-    <div class="dpad">
-      <div class="ph"></div><div class="cb" data-key="ArrowUp">NOPUNDE</div><div class="ph"></div>
-      <div class="cb" data-key="ArrowLeft">WEN</div><div class="ph"></div><div class="cb" data-key="ArrowRight">ORUN</div>
-      <div class="ph"></div><div class="cb" data-key="ArrowDown">NAJUNDE</div><div class="ph"></div>
-    </div>
+    <div id="joystick-base"><div id="joystick-knob"></div></div>
   </div>
   <div id="ctrl-right" class="cside">
     <div class="act-grid">
@@ -130,6 +123,8 @@ function sfx(n) {
 
 // ── Input ──────────────────────────────────────────────────────────────────
 const K = {};
+const FS  = matchMedia('(pointer:coarse)').matches ? 2   : 1; // canvas text scale for mobile
+const FSM = matchMedia('(pointer:coarse)').matches ? 1.4 : 1; // lighter scale for menu
 addEventListener('keydown', e => { K[e.code]=true;  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) e.preventDefault(); });
 addEventListener('keyup',   e => { K[e.code]=false; });
 
@@ -153,6 +148,51 @@ cv.addEventListener('pointerdown', () => {
     K['Enter']=true; setTimeout(()=>K['Enter']=false, 100);
   }
 });
+
+// Virtual joystick
+(function(){
+  const base=document.getElementById('joystick-base');
+  const knob=document.getElementById('joystick-knob');
+  if(!base||!knob)return;
+  let activeId=null,bx=0,by=0,br=55;
+  function joyKeys(dx,dy,dist){
+    K['ArrowLeft']=K['ArrowRight']=K['ArrowUp']=K['ArrowDown']=false;
+    if(dist<br*0.22)return;
+    const nx=dx/dist,ny=dy/dist;
+    if(nx>0.4)K['ArrowRight']=true;
+    if(nx<-0.4)K['ArrowLeft']=true;
+    if(ny<-0.4)K['ArrowUp']=true;
+    if(ny>0.55)K['ArrowDown']=true;
+  }
+  function updateJoy(tcx,tcy){
+    const dx=tcx-bx,dy=tcy-by,dist=Math.sqrt(dx*dx+dy*dy);
+    const r=Math.min(dist,br*0.55),a=Math.atan2(dy,dx);
+    knob.style.transform=`translate(calc(-50% + ${Math.cos(a)*r}px),calc(-50% + ${Math.sin(a)*r}px))`;
+    joyKeys(dx,dy,dist);
+  }
+  function reset(){
+    knob.style.transform='translate(-50%,-50%)';
+    K['ArrowLeft']=K['ArrowRight']=K['ArrowUp']=K['ArrowDown']=false;
+    activeId=null;
+  }
+  base.addEventListener('touchstart',e=>{
+    e.preventDefault();
+    const t=e.changedTouches[0];activeId=t.identifier;
+    const rect=base.getBoundingClientRect();
+    bx=rect.left+rect.width/2;by=rect.top+rect.height/2;br=rect.width/2;
+    updateJoy(t.clientX,t.clientY);
+    if(AC.state==='suspended')AC.resume();
+  },{passive:false});
+  base.addEventListener('touchmove',e=>{
+    e.preventDefault();
+    for(const t of e.changedTouches)if(t.identifier===activeId){updateJoy(t.clientX,t.clientY);break;}
+  },{passive:false});
+  base.addEventListener('touchend',e=>{
+    e.preventDefault();
+    for(const t of e.changedTouches)if(t.identifier===activeId){reset();break;}
+  },{passive:false});
+  base.addEventListener('touchcancel',()=>reset(),{passive:true});
+})();
 
 // ── Constants ──────────────────────────────────────────────────────────────
 const STATES = {
@@ -937,7 +977,7 @@ function drawFX() {
   FX.forEach(e=>{
     cx.globalAlpha = e.life/45;
     cx.fillStyle='#ffee00';
-    cx.font=`bold ${16+(45-e.life)*0.3}px "Courier New"`;
+    cx.font=`bold ${Math.round((16+(45-e.life)*0.3)*FS)}px "Courier New"`;
     cx.textAlign='center'; cx.fillText(`+${e.pts}pts`,e.x,e.y);
     cx.globalAlpha=1;
   });
@@ -945,47 +985,48 @@ function drawFX() {
 
 // ── HUD ────────────────────────────────────────────────────────────────────
 function drawHUD(p,c,round,timer) {
+  const hpW=280, hh=Math.round(52*FS);
   cx.fillStyle='rgba(0,0,0,0.72)';
-  cx.fillRect(0,0,W,52);
+  cx.fillRect(0,0,W,hh);
 
-  const hpW=280;
   // Player
-  cx.fillStyle='#fff'; cx.font='bold 12px "Courier New"'; cx.textAlign='left';
-  cx.fillText(p.name, 12,14);
-  cx.fillStyle='#333'; cx.fillRect(10,18,hpW,16);
+  cx.fillStyle='#fff'; cx.font=`bold ${Math.round(12*FS)}px "Courier New"`; cx.textAlign='left';
+  cx.fillText(p.name, 12, Math.round(14*FS));
+  cx.fillStyle='#333'; cx.fillRect(10, Math.round(18*FS), hpW, Math.round(16*FS));
   const pp=Math.max(0,p.hp/100);
   cx.fillStyle=pp>.5?'#22cc44':pp>.25?'#ffaa00':'#ff2222';
-  cx.fillRect(10,18,hpW*pp,16);
-  cx.strokeStyle='#555'; cx.lineWidth=1; cx.strokeRect(10,18,hpW,16);
-  cx.fillStyle='#ffdd00'; cx.font='bold 16px "Courier New"';
-  cx.fillText(p.score, 10,48);
+  cx.fillRect(10, Math.round(18*FS), hpW*pp, Math.round(16*FS));
+  cx.strokeStyle='#555'; cx.lineWidth=1; cx.strokeRect(10, Math.round(18*FS), hpW, Math.round(16*FS));
+  cx.fillStyle='#ffdd00'; cx.font=`bold ${Math.round(16*FS)}px "Courier New"`;
+  cx.fillText(p.score, 10, Math.round(48*FS));
 
   // CPU
-  cx.textAlign='right'; cx.fillStyle='#fff'; cx.font='bold 12px "Courier New"';
-  cx.fillText(c.name, W-12,14);
-  cx.fillStyle='#333'; cx.fillRect(W-10-hpW,18,hpW,16);
+  cx.textAlign='right'; cx.fillStyle='#fff'; cx.font=`bold ${Math.round(12*FS)}px "Courier New"`;
+  cx.fillText(c.name, W-12, Math.round(14*FS));
+  cx.fillStyle='#333'; cx.fillRect(W-10-hpW, Math.round(18*FS), hpW, Math.round(16*FS));
   const cp=Math.max(0,c.hp/100);
   cx.fillStyle=cp>.5?'#22cc44':cp>.25?'#ffaa00':'#ff2222';
-  cx.fillRect(W-10-hpW*cp,18,hpW*cp,16);
-  cx.strokeStyle='#555'; cx.lineWidth=1; cx.strokeRect(W-10-hpW,18,hpW,16);
-  cx.fillStyle='#ffdd00'; cx.font='bold 16px "Courier New"';
-  cx.fillText(c.score, W-10,48);
+  cx.fillRect(W-10-hpW*cp, Math.round(18*FS), hpW*cp, Math.round(16*FS));
+  cx.strokeStyle='#555'; cx.lineWidth=1; cx.strokeRect(W-10-hpW, Math.round(18*FS), hpW, Math.round(16*FS));
+  cx.fillStyle='#ffdd00'; cx.font=`bold ${Math.round(16*FS)}px "Courier New"`;
+  cx.fillText(c.score, W-10, Math.round(48*FS));
 
   // Center: round + timer
-  cx.textAlign='center'; cx.fillStyle='#aaa'; cx.font='11px "Courier New"';
-  cx.fillText(`ROUND ${round}/3`,W/2,13);
+  cx.textAlign='center'; cx.fillStyle='#aaa'; cx.font=`${Math.round(11*FS)}px "Courier New"`;
+  cx.fillText(`ROUND ${round}/3`, W/2, Math.round(13*FS));
   cx.fillStyle=timer<=10?'#ff4444':'#ffdd00';
-  cx.font='bold 24px "Courier New"';
-  cx.fillText(Math.ceil(Math.max(0,timer)),W/2,42);
+  cx.font=`bold ${Math.round(24*FS)}px "Courier New"`;
+  cx.fillText(Math.ceil(Math.max(0,timer)), W/2, Math.round(42*FS));
 
   // Round win dots
+  const dotY=Math.round(49*FS);
   for (let i=0;i<3;i++) {
     cx.fillStyle = i<game.wins.p ? '#22cc44' : '#333';
-    cx.beginPath(); cx.arc(W/2-30+i*16,49,5,0,Math.PI*2); cx.fill();
+    cx.beginPath(); cx.arc(W/2-30+i*16, dotY, 5, 0, Math.PI*2); cx.fill();
   }
   for (let i=0;i<3;i++) {
     cx.fillStyle = i<game.wins.c ? '#ff4444' : '#333';
-    cx.beginPath(); cx.arc(W/2+14+i*16,49,5,0,Math.PI*2); cx.fill();
+    cx.beginPath(); cx.arc(W/2+14+i*16, dotY, 5, 0, Math.PI*2); cx.fill();
   }
 }
 
@@ -1006,14 +1047,15 @@ function checkHits(atk, def) {
 
 // ── Announce overlay ───────────────────────────────────────────────────────
 function announce(text, sub='') {
+  const bw=Math.min(420*FS,W-40), bh=Math.round(110*Math.min(FS,1.6));
   cx.fillStyle='rgba(0,0,0,0.6)';
-  cx.fillRect(W/2-210,H/2-55,420,110);
+  cx.fillRect(W/2-bw/2,H/2-bh/2,bw,bh);
   cx.strokeStyle='#ffdd00'; cx.lineWidth=2;
-  cx.strokeRect(W/2-210,H/2-55,420,110);
+  cx.strokeRect(W/2-bw/2,H/2-bh/2,bw,bh);
   cx.textAlign='center';
-  cx.fillStyle='#ffdd00'; cx.font='bold 40px "Courier New"';
-  cx.fillText(text, W/2, H/2+8);
-  if (sub) { cx.fillStyle='#aaa'; cx.font='14px "Courier New"'; cx.fillText(sub,W/2,H/2+34); }
+  cx.fillStyle='#ffdd00'; cx.font=`bold ${Math.round(40*FS)}px "Courier New"`;
+  cx.fillText(text, W/2, H/2+Math.round(8*FS));
+  if (sub) { cx.fillStyle='#aaa'; cx.font=`${Math.round(14*FS)}px "Courier New"`; cx.fillText(sub,W/2,H/2+Math.round(34*FS)); }
 }
 
 // ── Main game object ───────────────────────────────────────────────────────
@@ -1062,12 +1104,12 @@ function drawMenu() {
   drawBG(1); cx.fillRect(0,0,W,H);
   cx.textAlign='center';
 
-  cx.fillStyle='#ffdd00'; cx.font='bold 64px "Courier New"';
+  cx.fillStyle='#ffdd00'; cx.font=`bold ${Math.round(64*FSM)}px "Courier New"`;
   cx.fillText('TVG', W/2, 105);
-  cx.fillStyle='#fff'; cx.font='bold 18px "Courier New"';
+  cx.fillStyle='#fff'; cx.font=`bold ${Math.round(18*FSM)}px "Courier New"`;
   cx.fillText('TAEKWONDO  SPARRING', W/2, 140);
 
-  cx.fillStyle='#888'; cx.font='13px "Courier New"';
+  cx.fillStyle='#888'; cx.font=`${Math.round(13*FSM)}px "Courier New"`;
   cx.fillText('WEN ←   ORUN →   NOPUNDE ↑   NAJUNDE ↓   SPACE: MAKGI', W/2, 200);
   cx.fillText('A: AP JOOMUK   S: AP CHA BUSIGI   D: DWIT CHAGI   F: DOLLYO CHAGI', W/2, 222);
 
@@ -1076,17 +1118,17 @@ function drawMenu() {
 
   // Five tenets of Taekwondo
   cx.textAlign='center';
-  cx.fillStyle='rgba(255,221,0,0.5)'; cx.font='9px "Courier New"';
+  cx.fillStyle='rgba(255,221,0,0.5)'; cx.font=`${Math.round(9*FSM)}px "Courier New"`;
   cx.fillText('— FIVE TENETS OF TAEKWONDO —', W/2, 246);
-  cx.fillStyle='rgba(200,220,255,0.82)'; cx.font='bold 11px "Courier New"';
+  cx.fillStyle='rgba(200,220,255,0.82)'; cx.font=`bold ${Math.round(11*FSM)}px "Courier New"`;
   cx.fillText('YE UI   ·   YOM CHI   ·   IN NAE', W/2, 263);
   cx.fillText('GUK GI   ·   BACKJOOL BOOLGGOOL', W/2, 280);
 
   if (Math.floor(Date.now()/600)%2===0) {
-    cx.fillStyle='#ffdd00'; cx.font='bold 17px "Courier New"';
+    cx.fillStyle='#ffdd00'; cx.font=`bold ${Math.round(17*FSM)}px "Courier New"`;
     cx.fillText('TAP  OR  PRESS  ENTER', W/2, 318);
   }
-  cx.fillStyle='#444'; cx.font='11px "Courier New"';
+  cx.fillStyle='#444'; cx.font=`${Math.round(11*FSM)}px "Courier New"`;
   cx.fillText('3 Rounds — Score points by landing kicks and punches', W/2, 355);
   cx.fillText('Kick to head = 3pts  |  Kick to body = 2pts  |  Punch = 1pt', W/2, 372);
 }
