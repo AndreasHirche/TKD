@@ -3,6 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#b41414">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="TKD">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>TKD — Taekwondo Sparring</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23111'/><text x='16' y='22' font-family='monospace' font-size='11' font-weight='900' fill='%23ffdd00' text-anchor='middle'>TKD</text></svg>">
 <style>
@@ -1062,9 +1069,9 @@ function announce(text, sub='') {
   cx.strokeStyle='#ffdd00'; cx.lineWidth=2;
   cx.strokeRect(W/2-bw/2,H/2-bh/2,bw,bh);
   cx.textAlign='center';
-  cx.fillStyle='#ffdd00'; cx.font=`bold ${Math.round(40*FS)}px "Courier New"`;
+  cx.fillStyle='#ffdd00'; cx.font=`bold ${Math.round(27*FS)}px "Courier New"`;
   cx.fillText(text, W/2, H/2+Math.round(8*FS));
-  if (sub) { cx.fillStyle='#aaa'; cx.font=`${Math.round(14*FS)}px "Courier New"`; cx.fillText(sub,W/2,H/2+Math.round(34*FS)); }
+  if (sub) { cx.fillStyle='#aaa'; cx.font=`${Math.round(10*FS)}px "Courier New"`; cx.fillText(sub,W/2,H/2+Math.round(28*FS)); }
 }
 
 // ── Main game object ───────────────────────────────────────────────────────
@@ -1248,5 +1255,6 @@ const menuF_c = Object.assign(new Fighter(700,-1,false,'','#111'), {state:'kick_
 
 requestAnimationFrame(ts=>{lastTs=ts; requestAnimationFrame(loop);});
 </script>
+<script>if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');</script>
 </body>
 </html>
