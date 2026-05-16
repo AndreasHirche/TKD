@@ -1,4 +1,4 @@
-const CACHE = 'tkd-v1';
+const CACHE = 'tkd-v2';
 
 self.addEventListener('install', e => { self.skipWaiting(); });
 
