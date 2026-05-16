@@ -1053,7 +1053,7 @@ function announce(text, sub='') {
   cx.strokeStyle='#ffdd00'; cx.lineWidth=2;
   cx.strokeRect(W/2-bw/2,H/2-bh/2,bw,bh);
   cx.textAlign='center';
-  cx.fillStyle='#ffdd00'; cx.font=`bold ${Math.round(40*FS)}px "Courier New"`;
+  cx.fillStyle='#ffdd00'; cx.font=`bold ${Math.round(27*FS)}px "Courier New"`;
   cx.fillText(text, W/2, H/2+Math.round(8*FS));
   if (sub) { cx.fillStyle='#aaa'; cx.font=`${Math.round(14*FS)}px "Courier New"`; cx.fillText(sub,W/2,H/2+Math.round(34*FS)); }
 }
