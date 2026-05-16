@@ -1047,15 +1047,15 @@ function checkHits(atk, def) {
 
 // ── Announce overlay ───────────────────────────────────────────────────────
 function announce(text, sub='') {
-  const bw=Math.min(420*FS,W-40), bh=Math.round(110*Math.min(FS,1.6));
+  const bw=Math.min(380,W-40), bh=88;
   cx.fillStyle='rgba(0,0,0,0.6)';
   cx.fillRect(W/2-bw/2,H/2-bh/2,bw,bh);
   cx.strokeStyle='#ffdd00'; cx.lineWidth=2;
   cx.strokeRect(W/2-bw/2,H/2-bh/2,bw,bh);
   cx.textAlign='center';
-  cx.fillStyle='#ffdd00'; cx.font=`bold ${Math.round(27*FS)}px "Courier New"`;
-  cx.fillText(text, W/2, H/2+Math.round(8*FS));
-  if (sub) { cx.fillStyle='#aaa'; cx.font=`${Math.round(14*FS)}px "Courier New"`; cx.fillText(sub,W/2,H/2+Math.round(34*FS)); }
+  cx.fillStyle='#ffdd00'; cx.font=`bold 27px "Courier New"`;
+  cx.fillText(text, W/2, H/2+10);
+  if (sub) { cx.fillStyle='#aaa'; cx.font=`11px "Courier New"`; cx.fillText(sub,W/2,H/2+28); }
 }
 
 // ── Main game object ───────────────────────────────────────────────────────
